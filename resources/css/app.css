@@ -1,9 +1,93 @@
-@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+@import "tw-animate-css";
+@import "shadcn-vue/tailwind.css";
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+@layer base {
+  .theme {
+    --font-sans: 'Geist Variable', sans-serif;
+    --font-heading: var(--font-sans);
+  }
+
+  :root {
+    --background: 48 33% 98%;
+    --foreground: 142 32% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 142 32% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 142 32% 20%;
+    --primary: 160 84% 32%;
+    --primary-foreground: 48 33% 98%;
+    --secondary: 42 73% 47%;
+    --secondary-foreground: 142 32% 20%;
+    --muted: 60 19% 94%;
+    --muted-foreground: 142 17% 42%;
+    --accent: 114 20% 89%;
+    --accent-foreground: 142 32% 20%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 48 33% 98%;
+    --border: 114 20% 84%;
+    --input: 114 20% 84%;
+    --ring: 160 84% 32%;
+    --chart-1: 160 84% 32%;
+    --chart-2: 42 73% 47%;
+    --chart-3: 114 20% 45%;
+    --chart-4: 48 20% 72%;
+    --chart-5: 142 17% 42%;
+    --radius: 0.875rem;
+    --sidebar: 60 19% 94%;
+    --sidebar-foreground: 142 32% 20%;
+    --sidebar-primary: 160 84% 32%;
+    --sidebar-primary-foreground: 48 33% 98%;
+    --sidebar-accent: 42 73% 47%;
+    --sidebar-accent-foreground: 142 32% 20%;
+    --sidebar-border: 114 20% 84%;
+    --sidebar-ring: 160 84% 32%;
+  }
+
+  .dark {
+    --background: 142 32% 12%;
+    --foreground: 48 33% 96%;
+    --card: 142 30% 16%;
+    --card-foreground: 48 33% 96%;
+    --popover: 142 30% 16%;
+    --popover-foreground: 48 33% 96%;
+    --primary: 151 45% 64%;
+    --primary-foreground: 142 32% 12%;
+    --secondary: 42 73% 58%;
+    --secondary-foreground: 142 32% 12%;
+    --muted: 142 22% 22%;
+    --muted-foreground: 60 14% 78%;
+    --accent: 142 22% 22%;
+    --accent-foreground: 48 33% 96%;
+    --destructive: 0 63% 55%;
+    --destructive-foreground: 48 33% 96%;
+    --border: 142 18% 28%;
+    --input: 142 18% 28%;
+    --ring: 151 45% 64%;
+    --chart-1: 151 45% 64%;
+    --chart-2: 42 73% 58%;
+    --chart-3: 114 24% 62%;
+    --chart-4: 48 24% 72%;
+    --chart-5: 60 14% 78%;
+    --sidebar: 142 30% 16%;
+    --sidebar-foreground: 48 33% 96%;
+    --sidebar-primary: 151 45% 64%;
+    --sidebar-primary-foreground: 142 32% 12%;
+    --sidebar-accent: 42 73% 58%;
+    --sidebar-accent-foreground: 142 32% 12%;
+    --sidebar-border: 142 18% 28%;
+    --sidebar-ring: 151 45% 64%;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
 }
