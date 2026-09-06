@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dashboard\CoupleProfileController;
+use App\Http\Controllers\Dashboard\DocumentChecklistController;
 use App\Http\Controllers\Dashboard\EventController;
 use App\Http\Controllers\Dashboard\GiftAddressController;
 use App\Http\Controllers\Dashboard\GiftBankAccountController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Dashboard\WishController;
 use App\Http\Controllers\Platform\SuperadminDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvitationController;
+use App\Http\Controllers\ShortLinkController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -66,31 +68,38 @@ Route::prefix('platform')
 // ═══════════════════════════════════════════════════════════════════════════════
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // ─── Dashboard redirect ───
-    Route::get('/dashboard', function () {
-        return redirect()->route('dashboard.weddings.index');
-    })->name('dashboard');
+    // ─── Dashboard Overview ───
+    Route::get('/dashboard', [\App\Http\Controllers\Dashboard\DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    // ─── User CRUD (Admin Only) ───
+    Route::resource('users', \App\Http\Controllers\Dashboard\UserController::class)
+        ->names('dashboard.users');
 
     // ─── Wedding CRUD ───
-    Route::resource('dashboard/weddings', WeddingController::class)
+    Route::resource('weddings', WeddingController::class)
         ->names('dashboard.weddings');
+    Route::resource('dashboard/weddings', WeddingController::class)
+        ->names('dashboard.weddings.legacy');
 
     // ─── Publish wedding ───
-    Route::post('dashboard/weddings/{wedding}/publish', [WeddingController::class, 'publish'])
+    Route::post('weddings/{wedding}/publish', [WeddingController::class, 'publish'])
         ->name('dashboard.weddings.publish');
 
     // ─── Invitation builder ───
-    Route::get('dashboard/weddings/{wedding}/builder', [WeddingController::class, 'builder'])
+    Route::get('weddings/{wedding}/builder', [WeddingController::class, 'builder'])
         ->name('dashboard.weddings.builder');
-    Route::put('dashboard/weddings/{wedding}/builder', [WeddingController::class, 'updateBuilder'])
+    Route::put('weddings/{wedding}/builder', [WeddingController::class, 'updateBuilder'])
         ->name('dashboard.weddings.builder.update');
-    Route::get('dashboard/my-weddings/{wedding}/builder', [WeddingController::class, 'builder'])
+    Route::get('my-weddings/{wedding}/builder', [WeddingController::class, 'builder'])
         ->name('dashboard.my-weddings.builder');
-    Route::put('dashboard/my-weddings/{wedding}/builder', [WeddingController::class, 'updateBuilder'])
+    Route::put('my-weddings/{wedding}/builder', [WeddingController::class, 'updateBuilder'])
         ->name('dashboard.my-weddings.builder.update');
+    Route::get('dashboard/my-weddings/{wedding}/builder', [WeddingController::class, 'builder']);
+    Route::put('dashboard/my-weddings/{wedding}/builder', [WeddingController::class, 'updateBuilder']);
 
     // ─── Nested under a specific wedding ───
-    Route::prefix('dashboard/weddings/{wedding}')->group(function () {
+    Route::prefix('weddings/{wedding}')->group(function () {
 
         // Guests (full CRUD + import/export/mark-sent)
         Route::resource('guests', GuestController::class)
@@ -143,6 +152,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Gift Addresses (full CRUD)
         Route::resource('gift-addresses', GiftAddressController::class)
             ->names('dashboard.weddings.gift-addresses');
+
+        // Document Checklist (index + store + update + destroy + reset)
+        Route::get('document-checklist', [DocumentChecklistController::class, 'index'])
+            ->name('dashboard.weddings.document-checklist.index');
+        Route::post('document-checklist', [DocumentChecklistController::class, 'store'])
+            ->name('dashboard.weddings.document-checklist.store');
+        Route::patch('document-checklist/{documentChecklist}', [DocumentChecklistController::class, 'update'])
+            ->name('dashboard.weddings.document-checklist.update');
+        Route::delete('document-checklist/{documentChecklist}', [DocumentChecklistController::class, 'destroy'])
+            ->name('dashboard.weddings.document-checklist.destroy');
+        Route::post('document-checklist/reset', [DocumentChecklistController::class, 'reset'])
+            ->name('dashboard.weddings.document-checklist.reset');
+        Route::post('document-checklist/config', [DocumentChecklistController::class, 'updateConfig'])
+            ->name('dashboard.weddings.document-checklist.config');
     });
 });
 
@@ -170,3 +193,11 @@ Route::prefix('w/{wedding:slug}')
             ->middleware('validate.guest_token')
             ->name('public.wish');
     });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHORT LINK REDIRECT ROUTE
+// Redirects clean /s/{code} links to full invitation URLs with tokens
+// ═══════════════════════════════════════════════════════════════════════════════
+Route::get('/s/{code}', [ShortLinkController::class, 'redirect'])
+    ->name('shortlink.redirect');
+

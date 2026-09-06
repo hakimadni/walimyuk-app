@@ -23,7 +23,7 @@ const searchQuery = ref('')
 function filterStatus(status) {
   statusFilter.value = status
   router.get(
-    `/dashboard/weddings/${props.wedding.id}/wishes`,
+    `/weddings/${props.wedding.id}/wishes`,
     { status: statusFilter.value },
     { preserveState: true, preserveScroll: true }
   )
@@ -40,20 +40,20 @@ const filteredWishes = computed(() => {
 })
 
 function approve(wish) {
-  router.put(`/dashboard/weddings/${props.wedding.id}/wishes/${wish.id}/approve`, {}, {
+  router.put(`/weddings/${props.wedding.id}/wishes/${wish.id}/approve`, {}, {
     preserveScroll: true,
   })
 }
 
 function reject(wish) {
-  router.put(`/dashboard/weddings/${props.wedding.id}/wishes/${wish.id}/reject`, {}, {
+  router.put(`/weddings/${props.wedding.id}/wishes/${wish.id}/reject`, {}, {
     preserveScroll: true,
   })
 }
 
 function deleteWish(wish) {
   if (confirm(`Hapus ucapan dan doa dari "${wish.name || wish.guest?.name || 'Tamu'}"?`)) {
-    router.delete(`/dashboard/weddings/${props.wedding.id}/wishes/${wish.id}`, {
+    router.delete(`/weddings/${props.wedding.id}/wishes/${wish.id}`, {
       preserveScroll: true,
     })
   }
@@ -80,7 +80,7 @@ function formatDateTime(str) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+            <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Moderasi Dinding Ucapan &amp; Doa</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Filter dan kelola doa kebaikan dari para tamu.</p>

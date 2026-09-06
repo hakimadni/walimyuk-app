@@ -23,7 +23,7 @@ const searchQuery = ref('')
 
 function filterStatus() {
   router.get(
-    `/dashboard/weddings/${props.wedding.id}/rsvps`,
+    `/weddings/${props.wedding.id}/rsvps`,
     { status: statusFilter.value },
     { preserveState: true, preserveScroll: true }
   )
@@ -61,19 +61,19 @@ function formatDateTime(str) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+            <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Rekap RSVP &amp; Kalkulator Katering</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Pantau konfirmasi kehadiran real-time.</p>
         </div>
         <div class="flex items-center gap-2">
-          <Link :href="`/dashboard/weddings/${wedding.id}/rsvps/analytics`">
+          <Link :href="`/weddings/${wedding.id}/rsvps/analytics`">
             <Button variant="outline" class="rounded-xl border-emerald-300 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">
               📊 Analisis Katering Detail
             </Button>
           </Link>
 
-          <a :href="`/dashboard/weddings/${wedding.id}/rsvps/export`" download>
+          <a :href="`/weddings/${wedding.id}/rsvps/export`" download>
             <Button class="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 transition flex items-center gap-1.5">
               <span>📤</span> Unduh Rekap (CSV/Excel)
             </Button>

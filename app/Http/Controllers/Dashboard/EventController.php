@@ -7,11 +7,34 @@ use App\Models\Event;
 use App\Models\Wedding;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class EventController extends Controller
 {
+    private function resolveCoordinates(?string $url, ?float &$latitude, ?float &$longitude): void
+    {
+        if (!$url || ($latitude && $longitude)) {
+            return;
+        }
+
+        try {
+            // If it's a short url, get the final redirected URL
+            $response = Http::withOptions(['allow_redirects' => true])->head($url);
+            $finalUrl = $response->effectiveUri() ? (string) $response->effectiveUri() : $url;
+            
+            if (preg_match('/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/', $finalUrl, $matches)) {
+                $latitude = (float) $matches[1];
+                $longitude = (float) $matches[2];
+            } elseif (preg_match('/@(-?\d+\.\d+),(-?\d+\.\d+)/', $finalUrl, $matches)) {
+                $latitude = (float) $matches[1];
+                $longitude = (float) $matches[2];
+            }
+        } catch (\Throwable $e) {
+            // Ignore if we can't resolve it
+        }
+    }
     /**
      * Display a listing of events for the wedding.
      */
@@ -61,6 +84,12 @@ class EventController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
+
+        $latitude = $validated['latitude'] ?? null;
+        $longitude = $validated['longitude'] ?? null;
+        $this->resolveCoordinates($validated['google_maps_url'] ?? null, $latitude, $longitude);
+        $validated['latitude'] = $latitude;
+        $validated['longitude'] = $longitude;
 
         $wedding->events()->create($validated);
 
@@ -116,6 +145,12 @@ class EventController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
+
+        $latitude = $validated['latitude'] ?? null;
+        $longitude = $validated['longitude'] ?? null;
+        $this->resolveCoordinates($validated['google_maps_url'] ?? null, $latitude, $longitude);
+        $validated['latitude'] = $latitude;
+        $validated['longitude'] = $longitude;
 
         $event->update($validated);
 

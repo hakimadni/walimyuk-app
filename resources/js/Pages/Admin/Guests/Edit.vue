@@ -20,7 +20,7 @@ const form = useForm({
 })
 
 function submit() {
-  form.put(`/dashboard/weddings/${props.wedding.id}/guests/${props.guest.id}`)
+  form.put(`/weddings/${props.wedding.id}/guests/${props.guest.id}`)
 }
 </script>
 
@@ -32,7 +32,7 @@ function submit() {
       <div class="flex items-center justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}/guests`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Tamu</Link>
+            <Link :href="`/weddings/${wedding.id}/guests`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Tamu</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Edit Data Tamu Undangan</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • {{ guest.name }}</p>
@@ -115,7 +115,7 @@ function submit() {
 
               <!-- Action Buttons -->
               <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <Link :href="`/dashboard/weddings/${wedding.id}/guests`">
+                <Link :href="`/weddings/${wedding.id}/guests`">
                   <Button type="button" variant="outline" class="rounded-xl">Batal</Button>
                 </Link>
                 <Button

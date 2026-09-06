@@ -49,13 +49,13 @@ function formatRupiah(val) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}/rsvps`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Rekap RSVP</Link>
+            <Link :href="`/weddings/${wedding.id}/rsvps`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Rekap RSVP</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Analisis Katering &amp; Anggaran Porsi</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Simulasi perhitungan porsi anti mubazir &amp; anti tekor.</p>
         </div>
         <div>
-          <a :href="`/dashboard/weddings/${wedding.id}/rsvps/export`" download>
+          <a :href="`/weddings/${wedding.id}/rsvps/export`" download>
             <Button class="rounded-xl bg-emerald-700 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
               📤 Ekspor Laporan Vendor Katering
             </Button>

@@ -51,15 +51,25 @@ function makeSlot(x, y, size) {
 
 export function resolveBuilder(themeConfig) {
   if (!themeConfig) themeConfig = {}
-  return themeConfig.builder || {
+  if (themeConfig.builder) {
+    if (!themeConfig.builder.content) themeConfig.builder.content = {}
+    if (!themeConfig.builder.content.couple_photo_frame) {
+      themeConfig.builder.content.couple_photo_frame = 'circle'
+    }
+    return themeConfig.builder
+  }
+  return {
     permissions: {},
     content: {
       font_family: 'font-sans',
+      cover_text_effect: 'none',
+      couple_photo_frame: 'circle',
       palette: {
         primary: '#065f46',
         secondary: '#d4af37',
         background: '#fdf8f0',
         text: '#1f2937',
+        guest_card_background: '#000000',
       },
       background_image: { type: 'none', url: null, uploaded_url: null },
       cover_background_image: { type: 'none', url: null, uploaded_url: null },
@@ -79,17 +89,18 @@ export function resolveBuilder(themeConfig) {
       custom_text: {
         cover_intro: null,
         cover_button_label: 'Buka Undangan',
+        cover_hashtag: '#selamANYAuntukHAKIM',
         closing_note: null,
       },
       music_url: null,
       music_uploaded_url: null,
       music_autoplay: false,
       blocks: [
-        { id: 'ayat',      label: 'Ayat',     enabled: true },
-        { id: 'countdown', label: 'Countdown', enabled: true },
+        { id: 'ayat',      label: 'Ayat',      enabled: true },
         { id: 'mempelai',  label: 'Mempelai',  enabled: true },
         { id: 'acara',     label: 'Acara',     enabled: true },
         { id: 'lokasi',    label: 'Lokasi',    enabled: true },
+        { id: 'countdown', label: 'Countdown', enabled: true },
         { id: 'gift',      label: 'Gift',      enabled: true },
         { id: 'rsvp',      label: 'RSVP',      enabled: true },
         { id: 'doa',       label: 'Doa',       enabled: true },
@@ -99,13 +110,19 @@ export function resolveBuilder(themeConfig) {
   }
 }
 
+export function normalizeStorageUrl(url) {
+  if (!url || typeof url !== 'string') return null
+  if (url.includes('/storage/')) {
+    const idx = url.indexOf('/storage/')
+    return url.substring(idx)
+  }
+  return url
+}
+
 export function resolveAssetUrl(item) {
   if (!item) return null
-  if (item.uploaded_url) return item.uploaded_url
-  if (item.url) return item.url
-  if (item.type && PREMIUM_PATH_MAP[item.type]) return PREMIUM_PATH_MAP[item.type]
-  if (item.type && item.type.startsWith('/assets/premium/')) return item.type
-  return null
+  var rawUrl = item.uploaded_url || item.url || (item.type && PREMIUM_PATH_MAP[item.type]) || (item.type && item.type.startsWith('/assets/premium/') ? item.type : null)
+  return normalizeStorageUrl(rawUrl)
 }
 
 export function resolveDecorationVisual(decoration) {
@@ -133,10 +150,11 @@ export function resolveBackgroundVisual(bg) {
 
 export function animationClass(animation) {
   switch (animation) {
-    case 'float':     return 'animate-[float_4s_ease-in-out_infinite]'
+    case 'none':      return ''
     case 'pulse':     return 'animate-pulse'
     case 'spin-slow': return 'animate-[spin_8s_linear_infinite]'
-    default:          return ''
+    case 'float':
+    default:          return 'anim-float'
   }
 }
 

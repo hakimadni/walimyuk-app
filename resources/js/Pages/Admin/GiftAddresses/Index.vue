@@ -10,7 +10,7 @@ const props = defineProps({
 
 function deleteAddress(addr) {
   if (confirm(`Hapus alamat kirim kado "${addr.recipient_name}"?`)) {
-    router.delete(`/dashboard/weddings/${props.wedding.id}/gift-addresses/${addr.id}`, {
+    router.delete(`/weddings/${props.wedding.id}/gift-addresses/${addr.id}`, {
       preserveScroll: true,
     })
   }
@@ -25,18 +25,18 @@ function deleteAddress(addr) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+            <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Alamat Kirim Kado Fisik</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Alamat tujuan pengiriman paket / kado dari tamu yang berhalangan hadir.</p>
         </div>
         <div class="flex items-center gap-2">
-          <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts`">
+          <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`">
             <Button variant="outline" class="rounded-xl border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
               💳 Rekening Amplop Digital
             </Button>
           </Link>
-          <Link :href="`/dashboard/weddings/${wedding.id}/gift-addresses/create`">
+          <Link :href="`/weddings/${wedding.id}/gift-addresses/create`">
             <Button class="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 flex items-center gap-1.5">
               <span>➕</span> Tambah Alamat
             </Button>
@@ -54,7 +54,7 @@ function deleteAddress(addr) {
           <p class="text-sm font-medium text-slate-700">Belum ada alamat kirim kado yang ditambahkan.</p>
           <p class="mt-1 text-xs text-slate-400">Tambahkan alamat rumah mempelai untuk memudahkan pengiriman hadiah via kurir/ekspedisi.</p>
           <div class="mt-6">
-            <Link :href="`/dashboard/weddings/${wedding.id}/gift-addresses/create`">
+            <Link :href="`/weddings/${wedding.id}/gift-addresses/create`">
               <Button class="rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800">
                 Tambah Alamat Pertama
               </Button>
@@ -91,7 +91,7 @@ function deleteAddress(addr) {
             </div>
 
             <div class="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
-              <Link :href="`/dashboard/weddings/${wedding.id}/gift-addresses/${addr.id}/edit`">
+              <Link :href="`/weddings/${wedding.id}/gift-addresses/${addr.id}/edit`">
                 <Button size="sm" variant="ghost" class="h-8 px-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900">
                   ✏️ Edit
                 </Button>

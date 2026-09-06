@@ -14,7 +14,15 @@ const copied = ref(false)
 
 function getPersonalLink() {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  return `${origin}/w/${props.wedding.slug}?guest=${props.guest.token}`
+  if (props.guest.short_code) {
+    return `${origin}/s/${props.guest.short_code}`
+  }
+  return `${origin}/w/${props.wedding.slug}?token=${props.guest.token}`
+}
+
+function getFullPersonalLink() {
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  return `${origin}/w/${props.wedding.slug}?token=${props.guest.token}`
 }
 
 function copyPersonalLink() {
@@ -44,7 +52,7 @@ function openWhatsApp() {
 }
 
 function markSent() {
-  router.post(`/dashboard/weddings/${props.wedding.id}/guests/${props.guest.id}/send`)
+  router.post(`/weddings/${props.wedding.id}/guests/${props.guest.id}/send`)
 }
 </script>
 
@@ -56,7 +64,7 @@ function markSent() {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}/guests`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Tamu</Link>
+            <Link :href="`/weddings/${wedding.id}/guests`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Tamu</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">{{ guest.name }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Detail tamu &amp; status RSVP.</p>
@@ -66,7 +74,7 @@ function markSent() {
           <Button type="button" class="bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700 flex items-center gap-1.5" @click="openWhatsApp">
             <span>Kirim via WhatsApp</span>
           </Button>
-          <Link :href="`/dashboard/weddings/${wedding.id}/guests/${guest.id}/edit`">
+          <Link :href="`/weddings/${wedding.id}/guests/${guest.id}/edit`">
             <Button variant="outline" class="text-xs font-semibold">Edit Tamu</Button>
           </Link>
         </div>
@@ -80,8 +88,11 @@ function markSent() {
           <CardContent class="p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-800">Tautan Undangan Personal Tamu</p>
-                <p class="mt-1 font-mono text-xs text-slate-700 break-all select-all">{{ getPersonalLink() }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-800">Tautan Singkat Undangan (WhatsApp / SMS)</p>
+                <p class="mt-1 font-mono text-sm font-semibold text-emerald-950 break-all select-all">{{ getPersonalLink() }}</p>
+                <p v-if="guest.short_code" class="mt-1 text-[11px] text-slate-500">
+                  Tautan lengkap: <span class="font-mono text-[10px] text-slate-400 select-all">{{ getFullPersonalLink() }}</span>
+                </p>
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <Button
@@ -92,7 +103,7 @@ function markSent() {
                 >
                   {{ copied ? '✓ Berhasil Disalin' : 'Salin Tautan' }}
                 </Button>
-                <a :href="getPersonalLink()" target="_blank" rel="noopener noreferrer">
+                <a :href="getFullPersonalLink()" target="_blank" rel="noopener noreferrer">
                   <Button class="rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800">
                     Buka Preview
                   </Button>
@@ -150,9 +161,9 @@ function markSent() {
                   <span class="text-slate-400">Konfirmasi</span>
                   <span
                     class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                    :class="guest.rsvp.status === 'attending' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                    :class="guest.rsvp.attendance_status === 'attending' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
                   >
-                    {{ guest.rsvp.status === 'attending' ? 'Hadir' : 'Tidak Hadir' }}
+                    {{ guest.rsvp.attendance_status === 'attending' ? 'Hadir' : 'Tidak Hadir' }}
                   </span>
                 </div>
                 <div class="flex justify-between border-b border-slate-100 pb-2">

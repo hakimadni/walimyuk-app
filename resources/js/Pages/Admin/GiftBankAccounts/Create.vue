@@ -29,7 +29,7 @@ const form = useForm({
 })
 
 function submit() {
-  form.post(`/dashboard/weddings/${props.wedding.id}/gift-bank-accounts`)
+  form.post(`/weddings/${props.wedding.id}/gift-bank-accounts`)
 }
 </script>
 
@@ -39,7 +39,7 @@ function submit() {
   <AuthenticatedLayout>
     <template #header>
       <div class="flex items-center gap-2">
-        <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Rekening</Link>
+        <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Rekening</Link>
       </div>
       <h2 class="font-serif text-3xl font-bold text-emerald-950 mt-1">Tambah Rekening Bank / Amplop Digital</h2>
       <p class="text-sm text-slate-500">{{ wedding.cover_title }} • Masukkan nomor rekening atau e-wallet untuk kado online.</p>
@@ -88,7 +88,7 @@ function submit() {
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-            <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts`">
+            <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`">
               <Button type="button" variant="outline" class="rounded-xl text-xs">Batal</Button>
             </Link>
             <Button

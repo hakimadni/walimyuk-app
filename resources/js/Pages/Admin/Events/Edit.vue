@@ -21,7 +21,7 @@ const form = useForm({
 })
 
 function submit() {
-  form.put(`/dashboard/weddings/${props.wedding.id}/events/${props.event.id}`)
+  form.put(`/weddings/${props.wedding.id}/events/${props.event.id}`)
 }
 </script>
 
@@ -31,7 +31,7 @@ function submit() {
   <AuthenticatedLayout>
     <template #header>
       <div class="flex items-center gap-2">
-        <Link :href="`/dashboard/weddings/${wedding.id}/events`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Acara</Link>
+        <Link :href="`/weddings/${wedding.id}/events`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Daftar Acara</Link>
       </div>
       <h2 class="font-serif text-3xl font-bold text-emerald-950 mt-1">Edit Rangkaian Acara</h2>
       <p class="text-sm text-slate-500">{{ wedding.cover_title }} • Perbarui jadwal dan lokasi acara.</p>
@@ -96,7 +96,7 @@ function submit() {
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-            <Link :href="`/dashboard/weddings/${wedding.id}/events`">
+            <Link :href="`/weddings/${wedding.id}/events`">
               <Button type="button" variant="outline" class="rounded-xl text-xs">Batal</Button>
             </Link>
             <Button

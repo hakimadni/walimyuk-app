@@ -10,7 +10,7 @@ const props = defineProps({
 
 function deleteEvent(event) {
   if (confirm(`Apakah Anda yakin ingin menghapus jadwal acara "${event.title}"?`)) {
-    router.delete(`/dashboard/weddings/${props.wedding.id}/events/${event.id}`, {
+    router.delete(`/weddings/${props.wedding.id}/events/${event.id}`, {
       preserveScroll: true,
     })
   }
@@ -36,12 +36,12 @@ function formatDate(str) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+            <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Jadwal &amp; Rangkaian Acara</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Kelola waktu akad, resepsi, dan lokasi venue.</p>
         </div>
-        <Link :href="`/dashboard/weddings/${wedding.id}/events/create`">
+        <Link :href="`/weddings/${wedding.id}/events/create`">
           <Button class="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 flex items-center gap-1.5">
             <span>➕</span> Tambah Jadwal Acara
           </Button>
@@ -58,7 +58,7 @@ function formatDate(str) {
           <p class="text-sm font-medium text-slate-700">Belum ada rangkaian acara yang ditambahkan.</p>
           <p class="mt-1 text-xs text-slate-400">Tambahkan Akad Nikah, Walimatul 'Ursy / Resepsi, atau agenda lainnya.</p>
           <div class="mt-6">
-            <Link :href="`/dashboard/weddings/${wedding.id}/events/create`">
+            <Link :href="`/weddings/${wedding.id}/events/create`">
               <Button class="rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800">
                 Tambah Acara Pertama
               </Button>
@@ -81,7 +81,7 @@ function formatDate(str) {
                   <h3 class="mt-3 font-serif text-xl font-bold text-slate-900">{{ formatDate(event.date) }}</h3>
                 </div>
                 <div class="flex items-center gap-1">
-                  <Link :href="`/dashboard/weddings/${wedding.id}/events/${event.id}/edit`">
+                  <Link :href="`/weddings/${wedding.id}/events/${event.id}/edit`">
                     <Button size="sm" variant="ghost" class="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-slate-900" title="Edit">
                       ✏️
                     </Button>

@@ -49,7 +49,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
               Buka Undangan
             </Button>
           </a>
-          <Link :href="`/dashboard/weddings/${wedding.id}/builder`">
+          <Link :href="`/weddings/${wedding.id}/builder`">
             <Button class="bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 flex items-center gap-1.5 shadow-sm">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -57,7 +57,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
               Theme Builder
             </Button>
           </Link>
-          <Link :href="`/dashboard/weddings/${wedding.id}/edit`">
+          <Link :href="`/weddings/${wedding.id}/edit`">
             <Button variant="ghost" class="text-xs font-medium text-slate-600 hover:bg-slate-100">
               Pengaturan
             </Button>
@@ -71,7 +71,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
         <!-- Command Center Metric Stats -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <!-- Tamu Undangan -->
-          <Link :href="`/dashboard/weddings/${wedding.id}/guests`" class="group transition">
+          <Link :href="`/weddings/${wedding.id}/guests`" class="group transition">
             <Card class="border-emerald-100 transition-all hover:border-emerald-500 hover:shadow-md">
               <CardContent class="p-5">
                 <div class="flex items-center justify-between">
@@ -91,7 +91,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
           </Link>
 
           <!-- RSVP Masuk -->
-          <Link :href="`/dashboard/weddings/${wedding.id}/rsvps`" class="group transition">
+          <Link :href="`/weddings/${wedding.id}/rsvps`" class="group transition">
             <Card class="border-emerald-100 transition-all hover:border-emerald-500 hover:shadow-md">
               <CardContent class="p-5">
                 <div class="flex items-center justify-between">
@@ -111,7 +111,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
           </Link>
 
           <!-- Ucapan & Doa -->
-          <Link :href="`/dashboard/weddings/${wedding.id}/wishes`" class="group transition">
+          <Link :href="`/weddings/${wedding.id}/wishes`" class="group transition">
             <Card class="border-emerald-100 transition-all hover:border-emerald-500 hover:shadow-md">
               <CardContent class="p-5">
                 <div class="flex items-center justify-between">
@@ -165,27 +165,49 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
               </CardHeader>
               <CardContent class="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
                 <!-- Groom -->
-                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-                  <div class="flex items-center gap-2 mb-2">
-                    <span class="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase">Pria</span>
-                    <h4 class="font-bold text-emerald-950">{{ groom?.full_name || 'Mempelai Pria' }}</h4>
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 flex gap-3.5 items-start">
+                  <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full border border-emerald-300 bg-emerald-100 flex items-center justify-center shadow-sm">
+                    <img
+                      v-if="groom?.photo_url || groom?.photo_path"
+                      :src="groom.photo_url || groom.photo_path"
+                      alt="Foto Groom"
+                      class="h-full w-full object-cover"
+                    />
+                    <span v-else class="text-xl">🤵</span>
                   </div>
-                  <p class="text-xs text-slate-600">{{ groom?.child_order_text || '-' }}</p>
-                  <p class="text-xs text-slate-600 mt-1">
-                    Putra dari: Bapak <span class="font-medium text-slate-800">{{ groom?.father_name || '-' }}</span> &amp; Ibu <span class="font-medium text-slate-800">{{ groom?.mother_name || '-' }}</span>
-                  </p>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase">Pria</span>
+                      <h4 class="font-bold text-emerald-950 truncate">{{ groom?.full_name || 'Mempelai Pria' }}</h4>
+                    </div>
+                    <p class="text-xs text-slate-600 truncate">{{ groom?.child_order_text || '-' }}</p>
+                    <p class="text-xs text-slate-600 mt-1">
+                      Putra dari: Bapak <span class="font-medium text-slate-800">{{ groom?.father_name || '-' }}</span> &amp; Ibu <span class="font-medium text-slate-800">{{ groom?.mother_name || '-' }}</span>
+                    </p>
+                  </div>
                 </div>
 
                 <!-- Bride -->
-                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-                  <div class="flex items-center gap-2 mb-2">
-                    <span class="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase">Wanita</span>
-                    <h4 class="font-bold text-emerald-950">{{ bride?.full_name || 'Mempelai Wanita' }}</h4>
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 flex gap-3.5 items-start">
+                  <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full border border-rose-300 bg-rose-100 flex items-center justify-center shadow-sm">
+                    <img
+                      v-if="bride?.photo_url || bride?.photo_path"
+                      :src="bride.photo_url || bride.photo_path"
+                      alt="Foto Bride"
+                      class="h-full w-full object-cover"
+                    />
+                    <span v-else class="text-xl">👰</span>
                   </div>
-                  <p class="text-xs text-slate-600">{{ bride?.child_order_text || '-' }}</p>
-                  <p class="text-xs text-slate-600 mt-1">
-                    Putri dari: Bapak <span class="font-medium text-slate-800">{{ bride?.father_name || '-' }}</span> &amp; Ibu <span class="font-medium text-slate-800">{{ bride?.mother_name || '-' }}</span>
-                  </p>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="rounded-full bg-rose-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase">Wanita</span>
+                      <h4 class="font-bold text-emerald-950 truncate">{{ bride?.full_name || 'Mempelai Wanita' }}</h4>
+                    </div>
+                    <p class="text-xs text-slate-600 truncate">{{ bride?.child_order_text || '-' }}</p>
+                    <p class="text-xs text-slate-600 mt-1">
+                      Putri dari: Bapak <span class="font-medium text-slate-800">{{ bride?.father_name || '-' }}</span> &amp; Ibu <span class="font-medium text-slate-800">{{ bride?.mother_name || '-' }}</span>
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -198,7 +220,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
               </CardHeader>
               <CardContent>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Link :href="`/dashboard/weddings/${wedding.id}/guests`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/guests`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-emerald-100 p-2.5 text-emerald-800 group-hover:scale-105 transition text-lg">
                       👥
                     </div>
@@ -208,7 +230,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/builder`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/builder`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-amber-100 p-2.5 text-amber-800 group-hover:scale-105 transition text-lg">
                       🎨
                     </div>
@@ -218,7 +240,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/couple-profiles`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/couple-profiles`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-emerald-100 p-2.5 text-emerald-800 group-hover:scale-105 transition text-lg">
                       🤵👰
                     </div>
@@ -228,7 +250,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/events`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/events`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-blue-100 p-2.5 text-blue-800 group-hover:scale-105 transition text-lg">
                       📅
                     </div>
@@ -238,7 +260,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/rsvps`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/rsvps`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-teal-100 p-2.5 text-teal-800 group-hover:scale-105 transition text-lg">
                       🍛
                     </div>
@@ -248,7 +270,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/wishes`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/wishes`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-purple-100 p-2.5 text-purple-800 group-hover:scale-105 transition text-lg">
                       💌
                     </div>
@@ -258,7 +280,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/wedding-verses`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/wedding-verses`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-amber-100 p-2.5 text-amber-800 group-hover:scale-105 transition text-lg">
                       📖
                     </div>
@@ -268,13 +290,23 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="rounded-lg bg-indigo-100 p-2.5 text-indigo-800 group-hover:scale-105 transition text-lg">
                       💳
                     </div>
                     <div>
                       <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Amplop Digital &amp; Kado</p>
                       <p class="text-xs text-slate-400">Nomor rekening transfer &amp; alamat kirim kado</p>
+                    </div>
+                  </Link>
+
+                  <Link :href="`/weddings/${wedding.id}/document-checklist`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                    <div class="rounded-lg bg-emerald-100 p-2.5 text-emerald-800 group-hover:scale-105 transition text-lg">
+                      📋
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Ceklis Dokumen Pernikahan</p>
+                      <p class="text-xs text-slate-400">Persyaratan RT/RW, Puskesmas, Kelurahan, KUA</p>
                     </div>
                   </Link>
                 </div>
@@ -308,7 +340,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                 </div>
 
                 <div class="pt-2">
-                  <Link :href="`/dashboard/weddings/${wedding.id}/builder`" class="block">
+                  <Link :href="`/weddings/${wedding.id}/builder`" class="block">
                     <Button variant="outline" class="w-full border-emerald-200 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">
                       Buka Builder &rarr;
                     </Button>

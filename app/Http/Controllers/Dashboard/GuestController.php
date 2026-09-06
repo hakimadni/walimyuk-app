@@ -254,13 +254,15 @@ class GuestController extends Controller
             $baseUrl = url('/');
 
             foreach ($guests as $guest) {
-                $statusRsvp = match ($guest->rsvp?->status) {
+                $statusRsvp = match ($guest->rsvp?->attendance_status) {
                     'attending' => 'Hadir',
                     'declined' => 'Tidak Hadir',
                     default => 'Belum Konfirmasi',
                 };
 
-                $personalLink = "{$baseUrl}/w/{$wedding->slug}?token={$guest->token}";
+                $personalLink = $guest->short_code
+                    ? "{$baseUrl}/s/{$guest->short_code}"
+                    : "{$baseUrl}/w/{$wedding->slug}?token={$guest->token}";
 
                 fputcsv($file, [
                     $guest->id,
@@ -270,7 +272,7 @@ class GuestController extends Controller
                     $guest->max_pax,
                     $guest->is_invitation_sent ? 'Terkirim' : 'Belum Dikirim',
                     $statusRsvp,
-                    $guest->rsvp?->status === 'attending' ? ($guest->rsvp?->pax_count ?? 1) : 0,
+                    $guest->rsvp?->attendance_status === 'attending' ? ($guest->rsvp?->pax_count ?? 1) : 0,
                     $personalLink,
                     $guest->notes ?? '-',
                 ]);

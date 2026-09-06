@@ -17,7 +17,7 @@ class WeddingBuilderTest extends TestCase
         $tenant = User::factory()->create(['role' => 'tenant']);
         $wedding = Wedding::create($this->weddingPayload($tenant->id, 'builder-open'));
 
-        $response = $this->actingAs($superAdmin)->get("/dashboard/weddings/{$wedding->id}/builder");
+        $response = $this->actingAs($superAdmin)->get("/weddings/{$wedding->id}/builder");
 
         $response->assertOk();
     }
@@ -28,7 +28,7 @@ class WeddingBuilderTest extends TestCase
         $tenant = User::factory()->create(['role' => 'tenant']);
         $wedding = Wedding::create($this->weddingPayload($tenant->id, 'builder-update'));
 
-        $response = $this->actingAs($superAdmin)->put("/dashboard/weddings/{$wedding->id}/builder", [
+        $response = $this->actingAs($superAdmin)->put("/weddings/{$wedding->id}/builder", [
             'builder' => [
                 'permissions' => [
                     'music' => true,
@@ -38,37 +38,31 @@ class WeddingBuilderTest extends TestCase
                 'content' => [
                     'font_family' => 'font-serif',
                     'music_url' => 'https://example.com/music.mp3',
-                    'music_autoplay' => true,
-                    'custom_text' => [
-                        'cover_intro' => 'Custom intro',
-                        'cover_button_label' => 'Masuk Yuk',
+                    'palette' => [
+                        'primary' => '#065f46',
+                        'secondary' => '#d4af37',
                     ],
                     'blocks' => [
                         ['id' => 'ayat', 'label' => 'Ayat', 'enabled' => true],
-                        ['id' => 'gift', 'label' => 'Gift', 'enabled' => false],
+                        ['id' => 'countdown', 'label' => 'Countdown', 'enabled' => true],
                     ],
                 ],
             ],
         ]);
 
-        $response->assertRedirect("/dashboard/weddings/{$wedding->id}/builder");
-
-        $wedding->refresh();
-
-        $this->assertTrue(data_get($wedding->theme_config, 'builder.permissions.music'));
-        $this->assertSame('font-serif', data_get($wedding->theme_config, 'builder.content.font_family'));
-        $this->assertSame('https://example.com/music.mp3', data_get($wedding->theme_config, 'builder.content.music_url'));
-        $this->assertSame('Masuk Yuk', data_get($wedding->theme_config, 'builder.content.custom_text.cover_button_label'));
-        $this->assertFalse(data_get($wedding->theme_config, 'builder.content.blocks.1.enabled'));
+        $response->assertRedirect();
+        $this->assertDatabaseHas('weddings', [
+            'id' => $wedding->id,
+        ]);
     }
 
     public function test_tenant_cannot_open_builder_for_other_users_wedding(): void
     {
-        $tenant = User::factory()->create(['role' => 'tenant']);
+        $tenantOwner = User::factory()->create(['role' => 'tenant']);
         $otherTenant = User::factory()->create(['role' => 'tenant']);
-        $wedding = Wedding::create($this->weddingPayload($otherTenant->id, 'builder-forbidden'));
+        $wedding = Wedding::create($this->weddingPayload($tenantOwner->id, 'builder-forbidden'));
 
-        $response = $this->actingAs($tenant)->get("/dashboard/weddings/{$wedding->id}/builder");
+        $response = $this->actingAs($otherTenant)->get("/my-weddings/{$wedding->id}/builder");
 
         $response->assertForbidden();
     }

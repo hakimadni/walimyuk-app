@@ -48,7 +48,7 @@ function applyPreset(preset) {
 }
 
 function submit() {
-  form.put(`/dashboard/weddings/${props.wedding.id}/wedding-verses`)
+  form.put(`/weddings/${props.wedding.id}/wedding-verses`)
 }
 </script>
 
@@ -58,7 +58,7 @@ function submit() {
   <AuthenticatedLayout>
     <template #header>
       <div class="flex items-center gap-2">
-        <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+        <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
       </div>
       <h2 class="font-serif text-3xl font-bold text-emerald-950 mt-1">Kutipan Ayat Suci &amp; Doa Pernikahan</h2>
       <p class="text-sm text-slate-500">{{ wedding.cover_title }} • Pilih ayat Al-Qur'an atau hadits pembuka undangan.</p>
@@ -133,7 +133,7 @@ function submit() {
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-            <Link :href="`/dashboard/weddings/${wedding.id}`">
+            <Link :href="`/weddings/${wedding.id}`">
               <Button type="button" variant="outline" class="rounded-xl text-xs">Batal</Button>
             </Link>
             <Button

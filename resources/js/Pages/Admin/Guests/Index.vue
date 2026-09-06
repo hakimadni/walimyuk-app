@@ -28,7 +28,7 @@ const importForm = useForm({
 
 function submitImport() {
   if (!importForm.file) return
-  importForm.post(`/dashboard/weddings/${props.wedding.id}/guests/import`, {
+  importForm.post(`/weddings/${props.wedding.id}/guests/import`, {
     onSuccess: () => {
       isImportModalOpen.value = false
       importForm.reset()
@@ -49,7 +49,7 @@ const filteredGuests = computed(() => {
 
     // Filter RSVP
     if (filterStatus.value !== 'all') {
-      const status = g.rsvp?.status || 'pending'
+      const status = g.rsvp?.attendance_status || 'pending'
       if (filterStatus.value === 'attending' && status !== 'attending') return false
       if (filterStatus.value === 'declined' && status !== 'declined') return false
       if (filterStatus.value === 'pending' && g.rsvp) return false
@@ -65,6 +65,9 @@ const filteredGuests = computed(() => {
 
 function getPersonalLink(guest) {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  if (guest.short_code) {
+    return `${origin}/s/${guest.short_code}`
+  }
   return `${origin}/w/${props.wedding.slug}?token=${guest.token}`
 }
 
@@ -96,14 +99,14 @@ function openWhatsApp(guest) {
 }
 
 function markSent(guest) {
-  router.post(`/dashboard/weddings/${props.wedding.id}/guests/${guest.id}/mark-sent`, {}, {
+  router.post(`/weddings/${props.wedding.id}/guests/${guest.id}/mark-sent`, {}, {
     preserveScroll: true,
   })
 }
 
 function deleteGuest(guest) {
   if (confirm(`Apakah Anda yakin ingin menghapus data tamu "${guest.name}"?`)) {
-    router.delete(`/dashboard/weddings/${props.wedding.id}/guests/${guest.id}`, {
+    router.delete(`/weddings/${props.wedding.id}/guests/${guest.id}`, {
       preserveScroll: true,
     })
   }
@@ -112,9 +115,9 @@ function deleteGuest(guest) {
 // Stats
 const totalGuests = computed(() => guestList.value.length)
 const totalSent = computed(() => guestList.value.filter(g => g.is_invitation_sent).length)
-const totalAttending = computed(() => guestList.value.filter(g => g.rsvp?.status === 'attending').length)
-const totalDeclined = computed(() => guestList.value.filter(g => g.rsvp?.status === 'declined').length)
-const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc + (g.rsvp?.status === 'attending' ? (g.rsvp?.pax_count || 1) : 0), 0))
+const totalAttending = computed(() => guestList.value.filter(g => g.rsvp?.attendance_status === 'attending').length)
+const totalDeclined = computed(() => guestList.value.filter(g => g.rsvp?.attendance_status === 'declined').length)
+const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc + (g.rsvp?.attendance_status === 'attending' ? (g.rsvp?.pax_count || 1) : 0), 0))
 </script>
 
 <template>
@@ -125,7 +128,7 @@ const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc 
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+            <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Manajemen Tamu Undangan</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Kelola daftar penerima &amp; link personal.</p>
@@ -142,7 +145,7 @@ const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc 
           </Button>
 
           <!-- Export CSV Link -->
-          <a :href="`/dashboard/weddings/${wedding.id}/guests/export`" download>
+          <a :href="`/weddings/${wedding.id}/guests/export`" download>
             <Button
               type="button"
               variant="outline"
@@ -153,7 +156,7 @@ const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc 
           </a>
 
           <!-- Add Guest -->
-          <Link :href="`/dashboard/weddings/${wedding.id}/guests/create`">
+          <Link :href="`/weddings/${wedding.id}/guests/create`">
             <Button class="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 transition flex items-center gap-1.5">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -263,7 +266,7 @@ const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc 
                     <!-- Name & Group -->
                     <TableCell>
                       <div>
-                        <Link :href="`/dashboard/weddings/${wedding.id}/guests/${guest.id}`" class="font-bold text-slate-900 hover:text-emerald-700">
+                        <Link :href="`/weddings/${wedding.id}/guests/${guest.id}`" class="font-bold text-slate-900 hover:text-emerald-700">
                           {{ guest.name }}
                         </Link>
                         <div class="flex items-center gap-1.5 mt-0.5">
@@ -300,9 +303,9 @@ const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc 
                       <div v-if="guest.rsvp" class="space-y-0.5">
                         <span
                           class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                          :class="guest.rsvp.status === 'attending' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                          :class="guest.rsvp.attendance_status === 'attending' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
                         >
-                          {{ guest.rsvp.status === 'attending' ? `✓ Hadir (${guest.rsvp.pax_count} orang)` : '✕ Berhalangan' }}
+                          {{ guest.rsvp.attendance_status === 'attending' ? `✓ Hadir (${guest.rsvp.pax_count} orang)` : '✕ Berhalangan' }}
                         </span>
                       </div>
                       <span v-else class="text-xs text-slate-400 italic">Belum konfirmasi</span>
@@ -354,7 +357,7 @@ const totalConfirmedPax = computed(() => guestList.value.reduce((acc, g) => acc 
                         </Button>
 
                         <!-- Edit -->
-                        <Link :href="`/dashboard/weddings/${wedding.id}/guests/${guest.id}/edit`">
+                        <Link :href="`/weddings/${wedding.id}/guests/${guest.id}/edit`">
                           <Button size="sm" variant="ghost" class="h-7 w-7 p-0 rounded-lg text-slate-500 hover:text-slate-900" title="Edit Data Tamu">
                             ✏️
                           </Button>

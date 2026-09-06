@@ -14,15 +14,37 @@ const props = defineProps({
 const emit = defineEmits(['update:builder'])
 
 function update(path, value) {
-  const newBuilder = JSON.parse(JSON.stringify(props.builder))
-  // Simple deep set
+  // Use structuredClone or shallow copy of the necessary parts, but since Inertia form is deeply reactive, we can just emit the modified object or mutate and emit.
+  // We'll mutate a shallow copy of the builder for simplicity, but preserve File objects by using a custom deep clone or just mutating the prop.
+  const newBuilder = { ...props.builder }
+  
   const keys = path.split('.')
   let obj = newBuilder
   for (let i = 0; i < keys.length - 1; i++) {
     if (!obj[keys[i]]) obj[keys[i]] = {}
+    if (Array.isArray(obj[keys[i]])) {
+      obj[keys[i]] = [...obj[keys[i]]]
+    } else {
+      obj[keys[i]] = { ...obj[keys[i]] }
+    }
     obj = obj[keys[i]]
   }
   obj[keys[keys.length - 1]] = value
+  
+  // Re-assign files since we did shallow copies 
+  if (props.builder.content?.music_file) {
+    newBuilder.content.music_file = props.builder.content.music_file
+  }
+  if (props.builder.content?.cover_background_image?.file) {
+    if (newBuilder.content.cover_background_image) newBuilder.content.cover_background_image.file = props.builder.content.cover_background_image.file
+  }
+  if (props.builder.content?.background_image?.file) {
+    if (newBuilder.content.background_image) newBuilder.content.background_image.file = props.builder.content.background_image.file
+  }
+  if (props.builder.content?.character_image?.file) {
+    if (newBuilder.content.character_image) newBuilder.content.character_image.file = props.builder.content.character_image.file
+  }
+
   emit('update:builder', newBuilder)
 }
 
@@ -86,7 +108,24 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
           @update:modelValue="update(activeTab === 'cover' ? 'content.cover_background_image.type' : 'content.background_image.type', $event)"
         />
       </div>
-      <p v-else class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">👑 Background premium tersedia untuk akun Premium</p>
+      <p v-else class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 mb-2">👑 Background preset tersedia untuk akun Premium</p>
+      
+      <div class="space-y-1.5 pt-2 border-t border-slate-200/60">
+        <Label class="text-[10px] text-slate-500">Atau upload background sendiri (Opsional)</Label>
+        <input 
+          type="file" 
+          accept="image/*" 
+          :disabled="disabled"
+          @input="update(activeTab === 'cover' ? 'content.cover_background_image.file' : 'content.background_image.file', $event.target.files[0])"
+          class="block w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs disabled:bg-slate-100" 
+        />
+        <p v-if="activeTab === 'cover' && builder.content.cover_background_image?.uploaded_url" class="text-[10px] text-emerald-700 truncate">
+          ✓ File terupload: {{ builder.content.cover_background_image.uploaded_url.split('/').pop() }}
+        </p>
+        <p v-else-if="activeTab === 'content' && builder.content.background_image?.uploaded_url" class="text-[10px] text-emerald-700 truncate">
+          ✓ File terupload: {{ builder.content.background_image.uploaded_url.split('/').pop() }}
+        </p>
+      </div>
     </div>
 
     <!-- Decoration Slots -->

@@ -21,11 +21,33 @@ class Guest extends Model
         'group_name',
         'max_pax',
         'token',
+        'short_code',
         'slug',
         'is_invitation_sent',
         'sent_at',
         'notes',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Guest $guest) {
+            if (empty($guest->token)) {
+                $guest->token = Str::random(64);
+            }
+            if (empty($guest->short_code)) {
+                $guest->short_code = static::generateUniqueShortCode();
+            }
+        });
+    }
+
+    public static function generateUniqueShortCode(int $length = 6): string
+    {
+        do {
+            $code = Str::lower(Str::random($length));
+        } while (static::withTrashed()->where('short_code', $code)->exists());
+
+        return $code;
+    }
 
     protected $casts = [
         'max_pax' => 'integer',

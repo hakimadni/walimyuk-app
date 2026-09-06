@@ -28,11 +28,13 @@ const dragOverIndex = ref(null)
 const previewIframe = ref(null)
 const previewContainer = ref(null)
 const previewScale = ref(1)
+const musicFileName = ref('')
+const musicFileError = ref('')
 
 function updateScale() {
   if (previewContainer.value) {
     const width = previewContainer.value.clientWidth
-    previewScale.value = width / 1080
+    previewScale.value = width / 393
   }
 }
 
@@ -59,7 +61,7 @@ const blocks = computed(() => form.builder.content.blocks || [])
 const activeBlocks = computed(() => (form.builder.content.blocks || []).filter(b => b.enabled))
 const isAdminMode = computed(() => props.mode === 'admin')
 const submitUrl = computed(() => isAdminMode.value
-  ? `/dashboard/weddings/${props.wedding.id}/builder`
+  ? `/weddings/${props.wedding.id}/builder`
   : `/dashboard/my-weddings/${props.wedding.id}/builder`
 )
 
@@ -74,8 +76,39 @@ const palette = computed(() => form.builder.content.palette || {
   text: '#1f2937',
 })
 
+function onMusicFileChange(event) {
+  const file = event.target.files[0]
+  musicFileName.value = ''
+  musicFileError.value = ''
+  if (!file) {
+    form.builder.content.music_file = null
+    return
+  }
+  const maxBytes = 20 * 1024 * 1024 // 20MB
+  if (file.size > maxBytes) {
+    musicFileError.value = `Ukuran file terlalu besar (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksimal 20 MB.`
+    event.target.value = ''
+    form.builder.content.music_file = null
+    return
+  }
+  musicFileName.value = file.name
+  form.builder.content.music_file = file
+}
+
 function submit() {
   form.post(submitUrl.value, { forceFormData: true })
+}
+
+function getBlockEditUrl(blockId) {
+  const routes = {
+    'ayat': `/weddings/${props.wedding.id}/wedding-verses`,
+    'mempelai': `/weddings/${props.wedding.id}/couple-profiles`,
+    'acara': `/weddings/${props.wedding.id}/events`,
+    'gift': `/weddings/${props.wedding.id}/gift-bank-accounts`,
+    'rsvp': `/weddings/${props.wedding.id}/rsvps`,
+    'doa': `/weddings/${props.wedding.id}/wishes`,
+  }
+  return routes[blockId] || null
 }
 
 // Drag and Drop handlers
@@ -145,10 +178,10 @@ function lockDisabled(permissionKey) {
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <Link :href="`/dashboard/weddings/${wedding.id}`">
+          <Link :href="`/weddings/${wedding.id}`">
             <Button variant="outline" size="sm" class="text-xs font-semibold">Detail</Button>
           </Link>
-          <Link :href="`/dashboard/weddings/${wedding.id}/guests`">
+          <Link :href="`/weddings/${wedding.id}/guests`">
             <Button variant="outline" size="sm" class="text-xs font-semibold">Kelola Tamu</Button>
           </Link>
           <a v-if="previewUrl" :href="previewUrl" target="_blank" rel="noopener noreferrer">
@@ -297,6 +330,16 @@ function lockDisabled(permissionKey) {
                     </label>
 
                     <div class="flex items-center gap-1 border-l border-slate-200 pl-3">
+                      <a
+                        v-if="getBlockEditUrl(block.id)"
+                        :href="getBlockEditUrl(block.id)"
+                        target="_blank"
+                        class="mr-1 inline-flex h-7 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+                        title="Edit Konten"
+                      >
+                        Edit
+                      </a>
+
                       <Button
                         type="button"
                         size="sm"
@@ -338,6 +381,16 @@ function lockDisabled(permissionKey) {
                   </select>
                 </div>
 
+                <div class="space-y-1.5">
+                  <Label>Bingkai Foto Mempelai</Label>
+                  <select v-model="form.builder.content.couple_photo_frame" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100 focus:border-emerald-500 focus:outline-none">
+                    <option value="circle">Lingkaran (1:1 Circle)</option>
+                    <option value="portrait">Potret (2:3 Rounded Corner)</option>
+                    <option value="rounded_square">Persegi Melengkung (1:1 Rounded)</option>
+                    <option value="arch">Kubah / Arch (2:3)</option>
+                  </select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 pt-2">
                   <div class="space-y-1">
                     <Label class="text-xs">Primary Color</Label>
@@ -367,6 +420,13 @@ function lockDisabled(permissionKey) {
                       <Input v-model="form.builder.content.palette.text" :disabled="lockDisabled('palette')" class="text-xs font-mono" />
                     </div>
                   </div>
+                  <div class="space-y-1">
+                    <Label class="text-xs">Bg "Kepada Yth."</Label>
+                    <div class="flex items-center gap-2">
+                      <input type="color" v-model="form.builder.content.palette.guest_card_background" :disabled="lockDisabled('palette')" class="h-8 w-8 cursor-pointer rounded-lg border border-slate-200 p-0.5" />
+                      <Input v-model="form.builder.content.palette.guest_card_background" :disabled="lockDisabled('palette')" class="text-xs font-mono" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -376,13 +436,23 @@ function lockDisabled(permissionKey) {
                 <div class="space-y-1.5">
                   <Label>URL Musik (Streaming / Direct MP3)</Label>
                   <Input v-model="form.builder.content.music_url" :disabled="lockDisabled('music')" placeholder="https://domain.com/music.mp3" />
+                  <p v-if="form.errors['builder.content.music_url']" class="text-xs text-red-600">{{ form.errors['builder.content.music_url'] }}</p>
                 </div>
                 <div class="space-y-1.5">
-                  <Label>Upload File Musik (opsional)</Label>
-                  <input type="file" accept="audio/*" :disabled="lockDisabled('music')" @input="form.builder.content.music_file = $event.target.files[0]" class="block w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs disabled:bg-slate-100" />
+                  <Label>Upload File Musik (opsional, maks. 20MB)</Label>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    :disabled="lockDisabled('music')"
+                    @change="onMusicFileChange($event)"
+                    class="block w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs disabled:bg-slate-100"
+                  />
+                  <p v-if="musicFileError" class="text-xs text-red-600">{{ musicFileError }}</p>
+                  <p v-else-if="musicFileName" class="text-xs text-slate-500">📎 Dipilih: {{ musicFileName }}</p>
+                  <p v-if="form.errors['builder.content.music_file']" class="text-xs text-red-600">{{ form.errors['builder.content.music_file'] }}</p>
                 </div>
                 <p v-if="form.builder.content.music_uploaded_url" class="text-xs text-emerald-700 truncate">
-                  ✓ File terupload: {{ form.builder.content.music_uploaded_url }}
+                  ✓ File terupload: {{ form.builder.content.music_uploaded_url.split('/').pop() }}
                 </p>
                 <label class="flex items-center gap-3 text-xs font-medium text-slate-700 cursor-pointer pt-1">
                   <input v-model="form.builder.content.music_autoplay" :disabled="lockDisabled('music')" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
@@ -402,6 +472,40 @@ function lockDisabled(permissionKey) {
                 <div class="space-y-1.5">
                   <Label>Label Tombol Cover</Label>
                   <Input v-model="form.builder.content.custom_text.cover_button_label" :disabled="lockDisabled('custom_text')" placeholder="Buka Undangan" />
+                </div>
+                <div class="space-y-1.5 sm:col-span-2">
+                  <Label>Hashtag Cover (Di Bawah Tanggal)</Label>
+                  <Input v-model="form.builder.content.custom_text.cover_hashtag" :disabled="lockDisabled('custom_text')" placeholder="#selamANYAuntukHAKIM" />
+                </div>
+                <div class="space-y-1.5 sm:col-span-2">
+                  <Label>Efek Teks Cover (Kontras)</Label>
+                  <select v-model="form.builder.content.cover_text_effect" :disabled="lockDisabled('custom_text')" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100 focus:border-emerald-500 focus:outline-none">
+                    <option value="none">Tanpa Efek (Normal)</option>
+                    <option value="shadow">Drop Shadow (Bayangan)</option>
+                    <option value="stroke">Stroke (Garis Tepi Hitam)</option>
+                  </select>
+                </div>
+                <div class="space-y-1.5 sm:col-span-2">
+                  <div class="flex items-center justify-between">
+                    <Label>Jarak Margin Atas Layar ke Salam (Spacing Atas)</Label>
+                    <span class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      {{ form.builder.content.cover_top_spacing ?? 84 }}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="220"
+                    step="4"
+                    :disabled="lockDisabled('custom_text')"
+                    v-model.number="form.builder.content.cover_top_spacing"
+                    class="w-full accent-emerald-600 cursor-pointer"
+                  />
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>20px (Mepet)</span>
+                    <span>Default: 84px (Lega)</span>
+                    <span>220px (Jauh ke Bawah)</span>
+                  </div>
                 </div>
                 <div class="space-y-1.5 sm:col-span-2">
                   <Label>Teks Penutup Undangan (Closing Note)</Label>
@@ -439,27 +543,32 @@ function lockDisabled(permissionKey) {
               <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                   <h3 class="font-serif text-base font-bold text-emerald-950">Live Preview Interaktif</h3>
-                  <p class="text-[11px] text-slate-400">Tampilan asli di mobile</p>
+                  <p class="text-[11px] text-slate-400">iPhone 14 (393 × 852 px)</p>
                 </div>
+                <span class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">
+                  393 × 852
+                </span>
               </div>
 
-              <!-- Phone Screen Mockup Frame -->
-              <div class="mt-4 overflow-hidden rounded-[32px] border-[6px] border-slate-900 shadow-2xl bg-slate-950 relative">
-                <!-- Phone Speaker / Camera Notch -->
-                <div class="absolute top-0 inset-x-0 h-4 z-50 bg-slate-900 flex justify-center items-center rounded-b-xl w-32 mx-auto">
-                  <div class="h-1.5 w-12 rounded-full bg-slate-700"></div>
+              <!-- Phone Screen Mockup Frame (iPhone 14 Style) -->
+              <div class="mt-4 overflow-hidden rounded-[44px] border-[8px] border-slate-900 shadow-2xl bg-slate-950 relative">
+                <!-- Phone Dynamic Island -->
+                <div class="absolute top-2.5 inset-x-0 z-50 flex justify-center items-center pointer-events-none">
+                  <div class="h-5 w-24 rounded-full bg-black flex items-center justify-end pr-2.5 shadow-inner">
+                    <div class="h-2 w-2 rounded-full bg-slate-900 border border-slate-800"></div>
+                  </div>
                 </div>
 
-                <!-- Preview Viewport Screen -->
-                <div class="relative w-full aspect-[9/20] bg-white overflow-hidden" ref="previewContainer">
+                <!-- Preview Viewport Screen (393x852) -->
+                <div class="relative w-full aspect-[393/852] bg-white overflow-hidden" ref="previewContainer">
                   <iframe 
                     v-if="previewUrl" 
                     ref="previewIframe" 
                     :src="previewUrl" 
                     class="absolute top-0 left-0 border-0" 
                     :style="{ 
-                      width: '1080px', 
-                      height: '2400px', 
+                      width: '393px', 
+                      height: '852px', 
                       transform: `scale(${previewScale})`, 
                       transformOrigin: 'top left' 
                     }"

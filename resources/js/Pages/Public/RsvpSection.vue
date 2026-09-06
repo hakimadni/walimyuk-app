@@ -1,13 +1,19 @@
 <script setup>
 import { computed } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, usePage } from '@inertiajs/vue3'
 import { Textarea } from '@/components/ui/textarea'
+import { resolveBuilder } from '@/lib/invitationTheme'
 
 const props = defineProps({
   guest: { type: Object, default: null },
   wedding: { type: Object, required: true },
   existingRsvp: { type: Object, default: null },
+  themeConfig: { type: Object, default: () => ({}) },
 })
+
+const page = usePage()
+const builder = computed(() => resolveBuilder(props.themeConfig))
+const palette = computed(() => builder.value.content.palette)
 
 const token = computed(() => {
   if (typeof window !== 'undefined') {
@@ -19,7 +25,7 @@ const token = computed(() => {
 const form = useForm({
   attendance_status: props.existingRsvp?.attendance_status || '',
   pax_count: props.existingRsvp?.pax_count || 1,
-  notes: props.existingRsvp?.notes || '',
+  comment: props.existingRsvp?.comment || '',
 })
 
 const maxPax = computed(() => props.guest?.max_pax || 5)
@@ -34,110 +40,127 @@ function submit() {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col px-5 py-6 overflow-y-auto">
-    <h2 class="mb-1 text-center font-serif text-2xl font-bold text-emerald-900">RSVP</h2>
-    <p class="mb-5 text-center text-xs text-slate-500 leading-relaxed">
-      Mohon konfirmasi kehadiran agar kami dapat mempersiapkan dengan lebih baik.
-    </p>
-
-    <!-- Already submitted banner -->
-    <div v-if="isSubmitted" class="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 text-center border border-emerald-200">
-      <p class="text-sm font-semibold text-emerald-800">
-        {{ existingRsvp.attendance_status === 'attending' ? '✓ Anda sudah konfirmasi hadir' : '✓ Anda sudah menyampaikan konfirmasi' }}
-      </p>
-      <p class="text-xs text-emerald-600 mt-0.5">Anda dapat memperbarui di bawah ini</p>
-    </div>
-
-    <!-- Success flash -->
-    <div v-if="$page.props.flash?.success" class="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 text-center border border-emerald-200">
-      <p class="text-sm font-semibold text-emerald-800">{{ $page.props.flash.success }}</p>
-    </div>
-
-    <form @submit.prevent="submit" class="flex-1 flex flex-col gap-4 text-center">
-      <!-- Attendance toggle -->
-      <div class="flex flex-col items-center">
-        <p class="mb-2 text-sm font-semibold text-slate-700">Apakah akan hadir?</p>
-        <div class="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            class="rounded-2xl border-2 py-4 text-sm font-bold transition-all"
-            :class="form.attendance_status === 'attending'
-              ? 'border-emerald-600 bg-emerald-600 text-white shadow-md'
-              : 'border-slate-200 bg-white text-slate-600'"
-            @click="form.attendance_status = 'attending'"
-          >
-            <span class="block text-xl mb-1">✅</span>
-            InsyaAllah Hadir
-          </button>
-          <button
-            type="button"
-            class="rounded-2xl border-2 py-4 text-sm font-bold transition-all"
-            :class="form.attendance_status === 'declined'
-              ? 'border-rose-500 bg-rose-500 text-white shadow-md'
-              : 'border-slate-200 bg-white text-slate-600'"
-            @click="form.attendance_status = 'declined'"
-          >
-            <span class="block text-xl mb-1">🙏</span>
-            Berhalangan
-          </button>
-        </div>
-        <p v-if="form.errors.attendance_status" class="mt-1 text-xs text-rose-500">{{ form.errors.attendance_status }}</p>
+  <div class="flex h-full min-h-0 w-full flex-col items-center justify-center px-5 py-5">
+    <div class="w-full">
+      <div class="mb-3.5 text-center aos-item aos-fade-down">
+        <h2 class="mb-1 font-serif text-2xl font-bold tracking-tight" :style="{ color: palette.primary }">RSVP</h2>
+        <p class="text-xs leading-relaxed opacity-85" :style="{ color: palette.secondary }">
+          Mohon konfirmasi kehadiran agar kami dapat mempersiapkan acara dengan baik.
+        </p>
       </div>
 
-      <!-- Pax stepper -->
-      <Transition
-        enter-active-class="transition-all duration-300 ease-out"
-        enter-from-class="opacity-0 -translate-y-2"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition-all duration-200 ease-in"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 -translate-y-2"
+      <!-- Already submitted banner -->
+      <div
+        v-if="isSubmitted && props.existingRsvp"
+        class="mb-3 rounded-xl p-2.5 text-center border backdrop-blur-sm aos-item aos-zoom-in"
+        :style="{ backgroundColor: `${palette.secondary}15`, borderColor: `${palette.secondary}44` }"
       >
-        <div v-if="isAttending" class="flex flex-col items-center">
-          <p class="mb-2 text-sm font-semibold text-slate-700">Jumlah yang hadir</p>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 w-full max-w-[200px]">
+        <p class="text-xs font-bold" :style="{ color: palette.primary }">
+          {{ props.existingRsvp.attendance_status === 'attending' ? '✓ Anda sudah konfirmasi hadir' : '✓ Anda sudah menyampaikan konfirmasi' }}
+        </p>
+        <p class="text-[10px] mt-0.5" :style="{ color: palette.secondary }">Anda dapat memperbarui di bawah ini</p>
+      </div>
+
+      <!-- Success flash -->
+      <div
+        v-if="page.props.flash?.success"
+        class="mb-3 rounded-xl p-2.5 text-center border backdrop-blur-sm aos-item aos-zoom-in"
+        :style="{ backgroundColor: `${palette.secondary}15`, borderColor: `${palette.secondary}44` }"
+      >
+        <p class="text-xs font-bold" :style="{ color: palette.primary }">{{ page.props.flash.success }}</p>
+      </div>
+
+      <form @submit.prevent="submit" class="flex flex-col gap-3 text-center">
+        <!-- Attendance toggle -->
+        <div class="flex flex-col items-center gap-1.5 aos-item aos-fade-up aos-delay-150">
+          <p class="text-xs font-bold" :style="{ color: palette.primary }">Apakah Anda akan hadir?</p>
+          <div class="grid w-full grid-cols-2 gap-2.5">
             <button
               type="button"
-              class="flex h-9 w-9 items-center justify-center rounded-xl text-xl font-bold transition"
-              :class="form.pax_count > 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'"
-              :disabled="form.pax_count <= 1"
-              @click="form.pax_count = Math.max(1, form.pax_count - 1)"
-            >−</button>
-            <div class="text-center">
-              <span class="text-2xl font-bold text-emerald-900">{{ form.pax_count }}</span>
-              <p class="text-[11px] text-slate-400">orang (maks. {{ maxPax }})</p>
-            </div>
+              class="rounded-xl border-2 py-2.5 text-xs font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95"
+              :style="form.attendance_status === 'attending' 
+                ? { borderColor: palette.secondary, backgroundColor: palette.primary, color: '#fff' }
+                : { borderColor: `${palette.secondary}44`, backgroundColor: `${palette.secondary}12`, color: palette.primary }"
+              @click="form.attendance_status = 'attending'"
+            >
+              <span class="text-xl drop-shadow-sm anim-pulse-soft">✅</span>
+              <span>Ya, Hadir</span>
+            </button>
             <button
               type="button"
-              class="flex h-9 w-9 items-center justify-center rounded-xl text-xl font-bold transition"
-              :class="form.pax_count < maxPax ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'"
-              :disabled="form.pax_count >= maxPax"
-              @click="form.pax_count = Math.min(maxPax, form.pax_count + 1)"
-            >+</button>
+              class="rounded-xl border-2 py-2.5 text-xs font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95"
+              :style="form.attendance_status === 'declined'
+                ? { borderColor: '#ef4444', backgroundColor: '#ef4444', color: '#fff' }
+                : { borderColor: `${palette.secondary}44`, backgroundColor: `${palette.secondary}12`, color: palette.primary }"
+              @click="form.attendance_status = 'declined'"
+            >
+              <span class="text-xl drop-shadow-sm">🙏</span>
+              <span>Maaf, Tidak</span>
+            </button>
           </div>
+          <p v-if="form.errors.attendance_status" class="text-xs text-rose-500">{{ form.errors.attendance_status }}</p>
         </div>
-      </Transition>
 
-      <!-- Notes / wishes -->
-      <div class="flex-1 flex flex-col items-center">
-        <p class="mb-2 text-sm font-semibold text-slate-700">Ucapan & Doa <span class="font-normal text-slate-400">(opsional)</span></p>
-        <Textarea
-          v-model="form.notes"
-          rows="3"
-          class="w-full rounded-2xl border-slate-200 bg-white text-sm text-center"
-          placeholder="Tulis doa dan ucapan terbaik Anda…"
-        />
-      </div>
+        <!-- Pax stepper -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 -translate-y-4"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-4"
+        >
+          <div v-if="isAttending" class="flex flex-col items-center gap-1 pt-0.5">
+            <p class="text-xs font-bold" :style="{ color: palette.primary }">Jumlah yang hadir</p>
+            <div
+              class="flex items-center justify-between rounded-full px-2 py-1 w-full max-w-[200px] shadow-sm border"
+              :style="{ backgroundColor: `${palette.secondary}15`, borderColor: `${palette.secondary}50` }"
+            >
+              <button
+                type="button"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-base font-bold transition-all active:scale-95 border"
+                :style="form.pax_count > 1 ? { backgroundColor: `${palette.secondary}25`, borderColor: `${palette.secondary}66`, color: palette.primary } : { backgroundColor: 'transparent', borderColor: 'transparent', color: '#cbd5e1' }"
+                :disabled="form.pax_count <= 1"
+                @click="form.pax_count = Math.max(1, form.pax_count - 1)"
+              >−</button>
+              <span class="font-bold text-lg tabular-nums" :style="{ color: palette.primary }">{{ form.pax_count }}</span>
+              <button
+                type="button"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-base font-bold transition-all active:scale-95 border"
+                :style="form.pax_count < maxPax ? { backgroundColor: `${palette.secondary}25`, borderColor: `${palette.secondary}66`, color: palette.primary } : { backgroundColor: 'transparent', borderColor: 'transparent', color: '#cbd5e1' }"
+                :disabled="form.pax_count >= maxPax"
+                @click="form.pax_count = Math.min(maxPax, form.pax_count + 1)"
+              >+</button>
+            </div>
+            <p class="text-[10px]" :style="{ color: palette.secondary }">*Maksimal undangan untuk {{ maxPax }} orang</p>
+          </div>
+        </Transition>
 
-      <!-- Submit -->
-      <button
-        type="submit"
-        :disabled="form.processing || !form.attendance_status"
-        class="w-full rounded-2xl py-4 text-sm font-bold text-white shadow-md transition active:scale-95 disabled:opacity-50"
-        :class="form.attendance_status ? 'bg-emerald-700' : 'bg-slate-300'"
-      >
-        {{ form.processing ? 'Mengirim...' : (isSubmitted ? 'Perbarui Konfirmasi' : 'Kirim Konfirmasi') }}
-      </button>
-    </form>
+        <!-- Notes / wishes -->
+        <div class="flex flex-col items-center gap-1 aos-item aos-fade-up aos-delay-250">
+          <p class="text-xs font-bold" :style="{ color: palette.primary }">
+            Ucapan & Doa <span class="font-normal text-[11px]" :style="{ color: palette.secondary }">(opsional)</span>
+          </p>
+          <Textarea
+            v-model="form.comment"
+            rows="2"
+            class="w-full rounded-xl p-2.5 text-xs text-center shadow-inner placeholder:opacity-50 focus:ring-2 transition-all resize-none border"
+            :style="{ backgroundColor: `${palette.secondary}12`, borderColor: `${palette.secondary}44`, color: palette.primary }"
+            placeholder="Tulis doa dan ucapan terbaik Anda untuk kedua mempelai…"
+          />
+        </div>
+
+        <!-- Submit button -->
+        <button
+          type="submit"
+          :disabled="form.processing || !form.attendance_status"
+          class="mt-1 w-full rounded-xl py-3 text-xs font-bold tracking-wide text-white shadow-md transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed border aos-item aos-fade-up aos-delay-300 anim-pulse-soft"
+          :style="{ backgroundColor: palette.primary, borderColor: `${palette.secondary}88` }"
+        >
+          <span v-if="form.processing">Mengirim konfirmasi…</span>
+          <span v-else>{{ isSubmitted ? 'Perbarui Konfirmasi' : 'Kirim Konfirmasi Kehadiran' }}</span>
+        </button>
+      </form>
+    </div>
   </div>
 </template>

@@ -33,11 +33,15 @@ const widthClass = computed(() => {
 
 const alignmentClasses = computed(() => {
     if (props.align === 'left') {
-        return 'ltr:origin-top-left rtl:origin-top-right start-0';
+        return 'ltr:origin-top-left rtl:origin-top-right start-0 mt-2';
     } else if (props.align === 'right') {
-        return 'ltr:origin-top-right rtl:origin-top-left end-0';
+        return 'ltr:origin-top-right rtl:origin-top-left end-0 mt-2';
+    } else if (props.align === 'top') {
+        return 'origin-bottom-left start-0 bottom-full mb-2';
+    } else if (props.align === 'top-right') {
+        return 'origin-bottom-right end-0 bottom-full mb-2';
     } else {
-        return 'origin-top';
+        return 'origin-top mt-2';
     }
 });
 
@@ -67,7 +71,7 @@ const open = ref(false);
         >
             <div
                 v-show="open"
-                class="absolute z-50 mt-2 rounded-md shadow-lg"
+                class="absolute z-50 rounded-md shadow-lg"
                 :class="[widthClass, alignmentClasses]"
                 style="display: none"
                 @click="open = false"

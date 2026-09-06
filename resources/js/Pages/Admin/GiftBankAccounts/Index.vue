@@ -10,7 +10,7 @@ const props = defineProps({
 
 function deleteAccount(acc) {
   if (confirm(`Hapus rekening "${acc.bank_name} - ${acc.account_number}"?`)) {
-    router.delete(`/dashboard/weddings/${props.wedding.id}/gift-bank-accounts/${acc.id}`, {
+    router.delete(`/weddings/${props.wedding.id}/gift-bank-accounts/${acc.id}`, {
       preserveScroll: true,
     })
   }
@@ -25,18 +25,18 @@ function deleteAccount(acc) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <Link :href="`/dashboard/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
+            <Link :href="`/weddings/${wedding.id}`" class="text-xs text-emerald-700 hover:underline">&larr; Kembali ke Detail</Link>
           </div>
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Amplop Digital &amp; Rekening Bank</h2>
           <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • Rekening transfer untuk kado cashless / amplop digital para tamu.</p>
         </div>
         <div class="flex items-center gap-2">
-          <Link :href="`/dashboard/weddings/${wedding.id}/gift-addresses`">
+          <Link :href="`/weddings/${wedding.id}/gift-addresses`">
             <Button variant="outline" class="rounded-xl border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
               📦 Alamat Kirim Kado Fisik
             </Button>
           </Link>
-          <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts/create`">
+          <Link :href="`/weddings/${wedding.id}/gift-bank-accounts/create`">
             <Button class="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 flex items-center gap-1.5">
               <span>➕</span> Tambah Rekening
             </Button>
@@ -54,7 +54,7 @@ function deleteAccount(acc) {
           <p class="text-sm font-medium text-slate-700">Belum ada rekening bank yang ditambahkan.</p>
           <p class="mt-1 text-xs text-slate-400">Tambahkan rekening BSI, BCA Syariah, Bank Mandiri, atau QRIS untuk kemudahan tamu memberikan tanda kasih.</p>
           <div class="mt-6">
-            <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts/create`">
+            <Link :href="`/weddings/${wedding.id}/gift-bank-accounts/create`">
               <Button class="rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800">
                 Tambah Rekening Pertama
               </Button>
@@ -90,7 +90,7 @@ function deleteAccount(acc) {
             </div>
 
             <div class="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
-              <Link :href="`/dashboard/weddings/${wedding.id}/gift-bank-accounts/${acc.id}/edit`">
+              <Link :href="`/weddings/${wedding.id}/gift-bank-accounts/${acc.id}/edit`">
                 <Button size="sm" variant="ghost" class="h-8 px-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900">
                   ✏️ Edit
                 </Button>

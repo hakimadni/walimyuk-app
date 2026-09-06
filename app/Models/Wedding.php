@@ -73,6 +73,11 @@ class Wedding extends Model
         return $this->hasMany(GiftAddress::class);
     }
 
+    public function documentChecklists(): HasMany
+    {
+        return $this->hasMany(WeddingDocumentChecklist::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function guests(): HasMany
     {
         return $this->hasMany(Guest::class);

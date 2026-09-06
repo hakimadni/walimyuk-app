@@ -91,3 +91,147 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ── Dynamic Invitation Animations ───────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes floatSoft {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025);
+  }
+}
+
+.anim-fade-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-fade-down {
+  animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-zoom-in {
+  animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-float {
+  animation: floatSoft 5s ease-in-out infinite;
+}
+
+.anim-pulse-soft {
+  animation: pulseSoft 2.8s ease-in-out infinite;
+}
+
+@keyframes fadeInOnly {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.anim-fade-in {
+  animation: fadeInOnly 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+
+/* ── Animate On Scroll (AOS) Engine ──────────────────────────── */
+.aos-item {
+  opacity: 0;
+  transition-property: opacity, transform;
+  transition-duration: 0.25s;
+  transition-delay: 0s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.aos-fade-up {
+  transform: translateY(28px);
+}
+
+.aos-fade-down {
+  transform: translateY(-20px);
+}
+
+.aos-zoom-in {
+  transform: scale(0.92);
+}
+
+.aos-fade-in {
+  transform: none;
+}
+
+/* When the section or item is scrolled into view (.aos-animate) */
+.aos-animate .aos-item,
+.aos-item.aos-animate {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+  transition-duration: 0.8s;
+}
+
+/* AOS Transition Delays only when active */
+.aos-animate .aos-delay-100, .aos-item.aos-animate.aos-delay-100 { transition-delay: 100ms; }
+.aos-animate .aos-delay-150, .aos-item.aos-animate.aos-delay-150 { transition-delay: 150ms; }
+.aos-animate .aos-delay-200, .aos-item.aos-animate.aos-delay-200 { transition-delay: 200ms; }
+.aos-animate .aos-delay-250, .aos-item.aos-animate.aos-delay-250 { transition-delay: 250ms; }
+.aos-animate .aos-delay-300, .aos-item.aos-animate.aos-delay-300 { transition-delay: 300ms; }
+.aos-animate .aos-delay-350, .aos-item.aos-animate.aos-delay-350 { transition-delay: 350ms; }
+.aos-animate .aos-delay-400, .aos-item.aos-animate.aos-delay-400 { transition-delay: 400ms; }
+.aos-animate .aos-delay-500, .aos-item.aos-animate.aos-delay-500 { transition-delay: 500ms; }
+

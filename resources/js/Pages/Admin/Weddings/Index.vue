@@ -47,7 +47,7 @@ function getCoupleNames(wedding) {
           <h2 class="font-serif text-3xl font-bold text-emerald-950">Daftar Undangan Pernikahan</h2>
           <p class="mt-1 text-sm text-slate-500">Kelola seluruh undangan, kustomisasi builder tema, dan manajemen tamu undangan.</p>
         </div>
-        <Link href="/dashboard/weddings/create">
+        <Link href="/weddings/create">
           <Button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 transition flex items-center gap-2">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -155,7 +155,7 @@ function getCoupleNames(wedding) {
                     <!-- Mempelai & Judul -->
                     <TableCell>
                       <div>
-                        <Link :href="`/dashboard/weddings/${w.id}`" class="font-semibold text-emerald-950 hover:text-emerald-700 transition">
+                        <Link :href="`/weddings/${w.id}`" class="font-semibold text-emerald-950 hover:text-emerald-700 transition">
                           {{ getCoupleNames(w) }}
                         </Link>
                         <p class="text-xs text-slate-500">{{ w.cover_title }}</p>
@@ -183,14 +183,14 @@ function getCoupleNames(wedding) {
                     <TableCell>
                       <div class="flex items-center gap-2 text-xs">
                         <Link
-                          :href="`/dashboard/weddings/${w.id}/guests`"
+                          :href="`/weddings/${w.id}/guests`"
                           class="rounded-lg bg-slate-100 px-2 py-1 font-medium text-slate-700 hover:bg-emerald-100 hover:text-emerald-800 transition"
                           title="Kelola Tamu Undangan"
                         >
                           👥 {{ w.guests_count || 0 }} Tamu
                         </Link>
                         <Link
-                          :href="`/dashboard/weddings/${w.id}/rsvps`"
+                          :href="`/weddings/${w.id}/rsvps`"
                           class="rounded-lg bg-slate-100 px-2 py-1 font-medium text-slate-700 hover:bg-emerald-100 hover:text-emerald-800 transition"
                           title="Lihat RSVP"
                         >
@@ -203,28 +203,28 @@ function getCoupleNames(wedding) {
                     <TableCell class="text-right">
                       <div class="flex items-center justify-end gap-1.5">
                         <!-- Detail Action Button -->
-                        <Link :href="`/dashboard/weddings/${w.id}`">
+                        <Link :href="`/weddings/${w.id}`">
                           <Button size="sm" variant="outline" class="h-8 rounded-lg border-emerald-200 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">
                             Detail
                           </Button>
                         </Link>
 
                         <!-- Builder Button -->
-                        <Link :href="`/dashboard/weddings/${w.id}/builder`">
+                        <Link :href="`/weddings/${w.id}/builder`">
                           <Button size="sm" class="h-8 rounded-lg bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800">
                             Builder
                           </Button>
                         </Link>
 
                         <!-- Kelola Tamu Button -->
-                        <Link :href="`/dashboard/weddings/${w.id}/guests`">
+                        <Link :href="`/weddings/${w.id}/guests`">
                           <Button size="sm" variant="ghost" class="h-8 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">
                             Tamu
                           </Button>
                         </Link>
 
                         <!-- Edit Button -->
-                        <Link :href="`/dashboard/weddings/${w.id}/edit`">
+                        <Link :href="`/weddings/${w.id}/edit`">
                           <Button size="sm" variant="ghost" class="h-8 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">
                             Edit
                           </Button>

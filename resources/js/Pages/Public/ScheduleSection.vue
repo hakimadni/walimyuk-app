@@ -1,56 +1,66 @@
 <script setup>
+import { computed } from 'vue'
 import { formatDate, formatTime } from '@/lib/date'
+import { resolveBuilder } from '@/lib/invitationTheme'
 
-defineProps({
-  events: { type: Array, default: () => [] }
+const props = defineProps({
+  events: { type: Array, default: () => [] },
+  themeConfig: { type: Object, default: () => ({}) },
 })
+
+const builder = computed(() => resolveBuilder(props.themeConfig))
+const palette = computed(() => builder.value.content.palette)
 </script>
 
 <template>
   <div class="flex h-full min-h-0 flex-col px-5 py-8">
-    <h2 class="mb-5 text-center font-serif text-2xl font-bold text-emerald-900">Jadwal Acara</h2>
+    <h2 class="mb-5 text-center font-serif text-2xl font-bold aos-item aos-fade-down" :style="{ color: palette.primary }">
+      Jadwal Acara
+    </h2>
 
     <div v-if="events && events.length" class="flex-1 space-y-4 overflow-y-auto pb-2">
       <div
-        v-for="event in events"
+        v-for="(event, idx) in events"
         :key="event.id"
-        class="px-5 py-5 border-b border-slate-200/50 last:border-0"
+        class="rounded-2xl border px-5 py-5 shadow-sm backdrop-blur-sm aos-item aos-fade-up"
+        :class="idx === 0 ? 'aos-delay-150' : 'aos-delay-300'"
+        :style="{ backgroundColor: `${palette.secondary}12`, borderColor: `${palette.secondary}44` }"
       >
-        <!-- Title badge -->
+        <!-- Title & hint indicator -->
         <div class="mb-3 flex items-center justify-center gap-2">
-          <div class="h-2.5 w-2.5 rounded-full bg-emerald-600 flex-shrink-0" />
-          <h3 class="font-serif text-lg font-bold text-emerald-900">{{ event.title }}</h3>
+          <div class="h-2.5 w-2.5 rounded-full flex-shrink-0 anim-pulse-soft" :style="{ backgroundColor: palette.secondary }" />
+          <h3 class="font-serif text-lg font-bold" :style="{ color: palette.primary }">{{ event.title }}</h3>
         </div>
 
-        <!-- Date & time -->
-        <div class="mb-3 flex flex-col items-center justify-center gap-3 text-sm text-slate-600 text-center">
-          <div class="flex-shrink-0 rounded-xl bg-emerald-50 px-3 py-2 text-center min-w-[60px] border border-emerald-100">
-            <p class="text-[10px] font-bold uppercase text-emerald-700">
+        <!-- Date & time card/badge -->
+        <div class="mb-3 flex flex-col items-center justify-center gap-3 text-sm text-center">
+          <div
+            class="flex-shrink-0 rounded-xl px-4 py-2 text-center min-w-[70px] border shadow-xs aos-item aos-zoom-in aos-delay-200"
+            :style="{ backgroundColor: `${palette.secondary}20`, borderColor: `${palette.secondary}60` }"
+          >
+            <p class="text-[10px] font-bold uppercase tracking-wider" :style="{ color: palette.secondary }">
               {{ event.date ? new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(new Date(event.date)) : '—' }}
             </p>
-            <p class="text-xl font-bold text-emerald-900 leading-none mt-0.5">
+            <p class="text-2xl font-bold leading-none mt-0.5" :style="{ color: palette.primary }">
               {{ event.date ? new Date(event.date).getDate() : '—' }}
             </p>
           </div>
-          <div class="pt-1">
-            <p class="font-semibold text-slate-700 text-sm">
+          <div class="pt-0.5">
+            <p class="font-bold text-sm tracking-wide" :style="{ color: palette.primary }">
               {{ event.start_time ? formatTime(event.start_time) : '' }}
               <span v-if="event.end_time">— {{ formatTime(event.end_time) }}</span>
               <span v-else-if="event.start_time"> WIB</span>
             </p>
-            <p class="text-xs text-slate-500 mt-0.5">{{ event.date ? formatDate(event.date) : 'Tanggal belum diisi' }}</p>
+            <p class="text-xs mt-0.5 opacity-80" :style="{ color: palette.secondary }">
+              {{ event.date ? formatDate(event.date) : 'Tanggal belum diisi' }}
+            </p>
           </div>
         </div>
 
         <!-- Venue -->
-        <div v-if="event.venue_name" class="flex flex-col items-center gap-1 text-xs text-slate-600 text-center">
-          <svg class="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          </svg>
-          <div>
-            <p class="font-semibold text-slate-700">{{ event.venue_name }}</p>
-            <p v-if="event.address" class="text-slate-500 mt-0.5 leading-relaxed">{{ event.address }}</p>
-          </div>
+        <div v-if="event.venue_name" class="flex flex-col items-center gap-1 text-xs text-center pt-1 border-t aos-item aos-fade-up aos-delay-350" :style="{ borderColor: `${palette.secondary}33` }">
+          <p class="font-semibold text-sm mt-1" :style="{ color: palette.primary }">{{ event.venue_name }}</p>
+          <p v-if="event.address" class="leading-relaxed opacity-85" :style="{ color: palette.primary }">{{ event.address }}</p>
         </div>
       </div>
     </div>
@@ -58,7 +68,7 @@ defineProps({
     <div v-else class="flex flex-1 items-center justify-center">
       <div class="text-center">
         <p class="text-2xl mb-2">📅</p>
-        <p class="text-sm text-slate-400 italic">Jadwal acara belum diisi</p>
+        <p class="text-sm italic opacity-60" :style="{ color: palette.primary }">Jadwal acara belum diisi</p>
       </div>
     </div>
   </div>

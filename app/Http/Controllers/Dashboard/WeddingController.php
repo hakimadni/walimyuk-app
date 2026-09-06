@@ -38,7 +38,10 @@ class WeddingController extends Controller
                 'secondary' => '#d4af37',
                 'background' => '#fdf8f0',
                 'text' => '#1f2937',
+                'guest_card_background' => '#000000',
             ],
+            'cover_text_effect' => 'none',
+            'cover_top_spacing' => 84,
             'background_image' => ['type' => 'none', 'url' => null, 'uploaded_url' => null],
             'cover_background_image' => ['type' => 'none', 'url' => null, 'uploaded_url' => null],
             'cover_decorations' => [
@@ -60,11 +63,11 @@ class WeddingController extends Controller
                 'closing_note' => null,
             ],
             'blocks' => [
-                ['id' => 'ayat',      'label' => 'Ayat',     'enabled' => true],
-                ['id' => 'countdown', 'label' => 'Countdown', 'enabled' => true],
+                ['id' => 'ayat',      'label' => 'Ayat',      'enabled' => true],
                 ['id' => 'mempelai',  'label' => 'Mempelai',  'enabled' => true],
                 ['id' => 'acara',     'label' => 'Acara',     'enabled' => true],
                 ['id' => 'lokasi',    'label' => 'Lokasi',    'enabled' => true],
+                ['id' => 'countdown', 'label' => 'Countdown', 'enabled' => true],
                 ['id' => 'gift',      'label' => 'Gift',      'enabled' => true],
                 ['id' => 'rsvp',      'label' => 'RSVP',      'enabled' => true],
                 ['id' => 'doa',       'label' => 'Doa',       'enabled' => true],
@@ -99,7 +102,14 @@ class WeddingController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Admin/Weddings/Create');
+        $users = [];
+        if ($this->isAdmin(request())) {
+            $users = \App\Models\User::orderBy('name')->get(['id', 'name', 'email']);
+        }
+        
+        return Inertia::render('Admin/Weddings/Create', [
+            'users' => $users
+        ]);
     }
 
     /**
@@ -107,7 +117,7 @@ class WeddingController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'cover_title' => ['required', 'string', 'max:255'],
             'cover_subtitle' => ['nullable', 'string', 'max:255'],
             'wedding_date' => ['required', 'date'],
@@ -117,11 +127,33 @@ class WeddingController extends Controller
             'rsvp_required' => ['nullable', 'boolean'],
             'comments_need_approval' => ['nullable', 'boolean'],
             'pax_buffer_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
-        ]);
+        ];
+        
+        if ($this->isAdmin($request)) {
+            $rules['user_id'] = ['required', 'exists:users,id'];
+        }
 
-        $wedding = $request->user()->weddings()->create([
-            ...$validated,
-            'slug' => Str::slug($validated['cover_title']) . '-' . Str::random(6),
+        $validated = $request->validate($rules);
+
+        $userId = $this->isAdmin($request) ? $validated['user_id'] : $request->user()->id;
+
+        $targetUser = \App\Models\User::find($userId);
+        if (!in_array($targetUser->role, ['super_admin', 'admin']) && $targetUser->weddings()->count() >= 1) {
+            $errorMsg = $this->isAdmin($request) 
+                ? 'Pengguna ini sudah memiliki 1 undangan (maksimal untuk non-admin).' 
+                : 'Anda sudah memiliki 1 undangan. Non-admin hanya diperbolehkan membuat maksimal 1 undangan.';
+            return back()->withErrors(['user_id' => $errorMsg, 'cover_title' => $errorMsg]);
+        }
+
+        $wedding = \App\Models\Wedding::create([
+            'user_id' => $userId,
+            'cover_title' => $validated['cover_title'],
+            'cover_subtitle' => $validated['cover_subtitle'] ?? null,
+            'wedding_date' => $validated['wedding_date'],
+            'timezone' => $validated['timezone'] ?? null,
+            'welcome_text' => $validated['welcome_text'] ?? null,
+            'closing_text' => $validated['closing_text'] ?? null,
+            'slug' => \Illuminate\Support\Str::slug($validated['cover_title']) . '-' . \Illuminate\Support\Str::random(6),
             'status' => 'draft',
             'rsvp_required' => $validated['rsvp_required'] ?? true,
             'comments_need_approval' => $validated['comments_need_approval'] ?? true,
@@ -158,8 +190,14 @@ class WeddingController extends Controller
 
         $wedding->load(['coupleProfiles' => fn ($query) => $query->orderBy('sort_order')]);
 
+        $users = [];
+        if ($this->isAdmin($request)) {
+            $users = \App\Models\User::orderBy('name')->get(['id', 'name', 'email']);
+        }
+
         return Inertia::render('Admin/Weddings/Edit', [
             'wedding' => $wedding,
+            'users' => $users,
         ]);
     }
 
@@ -227,15 +265,19 @@ class WeddingController extends Controller
             'builder.permissions.block_visibility' => ['nullable', 'boolean'],
             'builder.permissions.block_order' => ['nullable', 'boolean'],
 
+            'builder.content.couple_photo_frame' => ['nullable', 'string', 'in:circle,portrait,rounded_square,arch'],
             'builder.content.font_family' => ['nullable', 'string', 'max:50'],
             'builder.content.music_url' => ['nullable', 'string', 'max:1000'],
             'builder.content.music_uploaded_url' => ['nullable', 'string', 'max:1000'],
             'builder.content.music_autoplay' => ['nullable', 'boolean'],
-            'builder.content.music_file' => ['nullable', 'file', 'mimes:mp3,wav,ogg,m4a,aac', 'max:10240'],
+            'builder.content.music_file' => ['nullable', 'file', 'mimes:mp3,wav,ogg,m4a,aac', 'max:20480'],
             'builder.content.palette.primary' => ['nullable', 'string', 'max:20'],
             'builder.content.palette.secondary' => ['nullable', 'string', 'max:20'],
             'builder.content.palette.background' => ['nullable', 'string', 'max:20'],
-            'builder.content.palette.text' => ['nullable', 'string', 'max:20'],
+            'builder.content.palette.text' => ['nullable', 'string', 'max:50'],
+            'builder.content.palette.guest_card_background' => ['nullable', 'string', 'max:50'],
+            'builder.content.cover_text_effect' => ['nullable', 'string', 'max:50'],
+            'builder.content.cover_top_spacing' => ['nullable', 'integer', 'min:10', 'max:300'],
             // Cover decorations - 4 slots
             'builder.content.cover_decorations.top.type' => ['nullable', 'string', 'max:100'],
             'builder.content.cover_decorations.top.url' => ['nullable', 'string', 'max:1000'],
@@ -311,6 +353,7 @@ class WeddingController extends Controller
             'builder.content.background_image.file' => ['nullable', 'image', 'max:4096'],
             'builder.content.custom_text.cover_intro' => ['nullable', 'string', 'max:1000'],
             'builder.content.custom_text.cover_button_label' => ['nullable', 'string', 'max:100'],
+            'builder.content.custom_text.cover_hashtag' => ['nullable', 'string', 'max:100'],
             'builder.content.custom_text.closing_note' => ['nullable', 'string', 'max:1000'],
             'builder.content.blocks' => ['nullable', 'array'],
             'builder.content.blocks.*.id' => ['required_with:builder.content.blocks', 'string', 'max:50'],
@@ -372,7 +415,11 @@ class WeddingController extends Controller
             ]),
         ]);
 
-        return redirect()->route('dashboard.weddings.builder', $wedding)
+        $redirectUrl = $request->is('dashboard/*')
+            ? "/dashboard/weddings/{$wedding->id}/builder"
+            : route('dashboard.weddings.builder', $wedding);
+
+        return redirect()->to($redirectUrl)
             ->with('success', 'Builder undangan berhasil diperbarui.');
     }
 
@@ -383,7 +430,7 @@ class WeddingController extends Controller
     {
         $this->authorizeWedding($request, $wedding);
 
-        $validated = $request->validate([
+        $rules = [
             'cover_title' => ['required', 'string', 'max:255'],
             'cover_subtitle' => ['nullable', 'string', 'max:255'],
             'wedding_date' => ['required', 'date'],
@@ -394,11 +441,28 @@ class WeddingController extends Controller
             'rsvp_required' => ['nullable', 'boolean'],
             'comments_need_approval' => ['nullable', 'boolean'],
             'pax_buffer_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
-        ]);
+        ];
+
+        if ($this->isAdmin($request)) {
+            $rules['user_id'] = ['nullable', 'exists:users,id'];
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($this->isAdmin($request) && !empty($validated['user_id']) && $validated['user_id'] != $wedding->user_id) {
+            $targetUser = \App\Models\User::find($validated['user_id']);
+            if (!in_array($targetUser->role, ['super_admin', 'admin']) && $targetUser->weddings()->count() >= 1) {
+                return back()->withErrors(['user_id' => 'Pengguna tujuan ini sudah memiliki 1 undangan (maksimal untuk non-admin).']);
+            }
+        }
 
         $wedding->update($validated);
 
-        return redirect()->route('dashboard.weddings.show', $wedding)
+        $redirectUrl = $request->is('dashboard/*')
+            ? "/dashboard/weddings/{$wedding->id}"
+            : route('dashboard.weddings.show', $wedding);
+
+        return redirect()->to($redirectUrl)
             ->with('success', 'Undangan berhasil diperbarui.');
     }
 
@@ -492,6 +556,8 @@ class WeddingController extends Controller
 
         if (data_get($current, 'permissions.custom_text')) {
             data_set($allowed, 'content.custom_text', data_get($incoming, 'content.custom_text', []));
+            data_set($allowed, 'content.cover_text_effect', data_get($incoming, 'content.cover_text_effect', 'none'));
+            data_set($allowed, 'content.cover_top_spacing', data_get($incoming, 'content.cover_top_spacing', 84));
         }
 
         if (data_get($current, 'permissions.music')) {
@@ -515,6 +581,10 @@ class WeddingController extends Controller
             }
 
             data_set($allowed, 'content.blocks', $blocks);
+        }
+
+        if (data_get($incoming, 'content.couple_photo_frame')) {
+            data_set($allowed, 'content.couple_photo_frame', data_get($incoming, 'content.couple_photo_frame'));
         }
 
         return $allowed;
