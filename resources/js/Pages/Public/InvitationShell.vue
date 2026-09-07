@@ -11,7 +11,11 @@ import GiftSection from './GiftSection.vue'
 import RsvpSection from './RsvpSection.vue'
 import WishesSection from './WishesSection.vue'
 import ClosingSection from './ClosingSection.vue'
-import { enabledBlocks, resolveBuilder, resolveBackgroundVisual, resolveAssetUrl, normalizeStorageUrl, animationClass } from '@/lib/invitationTheme'
+import { enabledBlocks, resolveBuilder, resolveBackgroundVisual, resolveAssetUrl, normalizeStorageUrl, animationClass, DEFAULT_SLOT_COORDS, getContentDecorationStyle } from '@/lib/invitationTheme'
+
+function defaultSlotCoord(slot, axis) {
+  return DEFAULT_SLOT_COORDS[slot]?.[axis] ?? 50
+}
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -202,6 +206,10 @@ function toggleMusic() {
 }
 
 onMounted(() => {
+  // Hide document scrollbars for clean app-like invitation presentation
+  document.documentElement.classList.add('no-scrollbar')
+  document.body.classList.add('no-scrollbar')
+
   // Bind audio state events so UI button is always in sync with actual audio playback
   const audio = document.getElementById('invitation-music')
   if (audio) {
@@ -221,6 +229,11 @@ onMounted(() => {
     }
   })
 })
+
+onUnmounted(() => {
+  document.documentElement.classList.remove('no-scrollbar')
+  document.body.classList.remove('no-scrollbar')
+})
 </script>
 
 <template>
@@ -235,7 +248,7 @@ onMounted(() => {
   </Head>
 
   <div
-    class="min-h-screen w-full relative"
+    class="min-h-screen w-full relative no-scrollbar"
     :class="builder.content.font_family || 'font-sans'"
     :style="{
       backgroundColor: palette.background,
@@ -357,34 +370,31 @@ onMounted(() => {
           v-for="section in activeSections"
           :key="section.id"
           :id="`section-${section.id}`"
-          class="relative w-full min-h-screen py-12 flex flex-col items-center justify-center overflow-hidden"
+          class="relative w-full min-h-screen py-12 flex flex-col items-center justify-center overflow-x-clip"
         >
-          <!-- Content Decorations Overlay (4-slot) -->
-          <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <template v-for="slot in ['top', 'bottom', 'left', 'right']" :key="slot">
-              <div
-                v-if="resolveAssetUrl(contentDecos[slot])"
-                class="absolute"
-                :style="{
-                  left:    (contentDecos[slot]?.x ?? 50) + '%',
-                  top:     (contentDecos[slot]?.y ?? 50) + '%',
-                  transform: 'translate(-50%, -50%)',
-                  width:   (contentDecos[slot]?.size ?? 150) + 'px',
-                  opacity: (contentDecos[slot]?.opacity ?? 90) / 100,
-                  zIndex: 0,
-                }"
-              >
-                <div :class="animationClass(contentDecos[slot]?.animation)" class="w-full h-full">
-                  <img :src="resolveAssetUrl(contentDecos[slot])" class="h-auto w-full object-contain" alt="" />
+          <!-- Card Container with Overlaid Decorations -->
+          <div class="relative w-[92%] max-w-[420px] mx-auto my-auto">
+            <!-- White Frosted Card Content -->
+            <div 
+              class="relative z-10 w-full rounded-[2rem] shadow-xl backdrop-blur-md border border-white/20 overflow-hidden aos-item aos-zoom-in"
+              :style="{ backgroundColor: 'rgba(255, 255, 255, 0.75)' }"
+            >
+              <component :is="section.component" v-bind="section.getProps()" class="w-full relative z-10" />
+            </div>
+
+            <!-- Content Decorations Overlay (IN FRONT of card, z-20, overflow-visible) -->
+            <div class="pointer-events-none absolute inset-0 z-20 overflow-visible">
+              <template v-for="slot in ['top_left', 'top_right', 'bottom_left', 'bottom_right', 'top', 'bottom', 'left', 'right']" :key="slot">
+                <div
+                  v-if="resolveAssetUrl(contentDecos[slot])"
+                  :style="getContentDecorationStyle(slot, contentDecos[slot])"
+                >
+                  <div :class="animationClass(contentDecos[slot]?.animation)" class="w-full h-full">
+                    <img :src="resolveAssetUrl(contentDecos[slot])" class="h-auto w-full object-contain" alt="" />
+                  </div>
                 </div>
-              </div>
-            </template>
-          </div>
-          <div 
-            class="relative z-10 w-[92%] max-w-[420px] mx-auto rounded-[2rem] shadow-xl backdrop-blur-md border border-white/20 overflow-hidden aos-item aos-zoom-in"
-            :style="{ backgroundColor: 'rgba(255, 255, 255, 0.75)' }"
-          >
-            <component :is="section.component" v-bind="section.getProps()" class="w-full relative z-10" />
+              </template>
+            </div>
           </div>
         </section>
       </div>
@@ -473,5 +483,19 @@ onMounted(() => {
 .music-btn--playing:hover .music-btn__pause {
   opacity: 1;
   transform: scale(1);
+}
+
+/* ── Hide scrollbar for invitation page ── */
+:global(html),
+:global(body) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+:global(html::-webkit-scrollbar),
+:global(body::-webkit-scrollbar) {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 </style>

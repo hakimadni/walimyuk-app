@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import AssetGrid from './AssetGrid.vue'
 import DecorationCanvas from './DecorationCanvas.vue'
-import { PREMIUM_ASSETS } from '@/lib/invitationTheme'
+import { PREMIUM_ASSETS, DEFAULT_SLOT_COORDS } from '@/lib/invitationTheme'
 
 const props = defineProps({
   builder: { type: Object, required: true },
@@ -57,9 +57,65 @@ function getSlot(layer, slot) {
 }
 
 const activeTab = ref('cover') // 'cover' | 'content'
-const activeSlot = ref('top')  // 'top' | 'bottom' | 'left' | 'right'
+const activeSlot = ref('top')  // 'top' | 'bottom' | 'left' | 'right' | 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right'
 
-const SLOT_LABELS = { top: 'Atas', bottom: 'Bawah', left: 'Kiri', right: 'Kanan' }
+const COVER_SLOT_LABELS = {
+  top: 'Atas',
+  bottom: 'Bawah',
+  left: 'Kiri',
+  right: 'Kanan',
+}
+
+const CONTENT_SLOT_LABELS = {
+  top_left: '↖ Kiri Atas',
+  top_right: '↗ Kanan Atas',
+  bottom_left: '↙ Kiri Bawah',
+  bottom_right: '↘ Kanan Bawah',
+}
+
+const currentSlotLabels = computed(() => {
+  return activeTab.value === 'cover' ? COVER_SLOT_LABELS : CONTENT_SLOT_LABELS
+})
+
+function switchTab(tabKey) {
+  activeTab.value = tabKey
+  if (tabKey === 'cover' && !COVER_SLOT_LABELS[activeSlot.value]) {
+    activeSlot.value = 'top'
+  } else if (tabKey === 'content' && !CONTENT_SLOT_LABELS[activeSlot.value]) {
+    activeSlot.value = 'top_left'
+  }
+}
+
+function defaultCoord(slot, axis) {
+  return DEFAULT_SLOT_COORDS[slot]?.[axis] ?? 50
+}
+
+function resetSlotPosition(slot) {
+  const s = slot || activeSlot.value
+  const def = DEFAULT_SLOT_COORDS[s] || { x: 50, y: 50 }
+  updateSlot(currentLayer.value, s, 'x', def.x)
+  updateSlot(currentLayer.value, s, 'y', def.y)
+}
+
+function resetAllCorners() {
+  const corners = {
+    top_left:     { x: 0,   y: 0,   size: 140 },
+    top_right:    { x: 100, y: 0,   size: 140 },
+    bottom_left:  { x: 0,   y: 100, size: 110 },
+    bottom_right: { x: 100, y: 100, size: 110 },
+  }
+  const currentDecos = { ...(props.builder.content?.content_decorations || {}) }
+  for (const [slot, def] of Object.entries(corners)) {
+    currentDecos[slot] = {
+      ...(currentDecos[slot] || {}),
+      x: def.x,
+      y: def.y,
+      size: currentDecos[slot]?.size || def.size,
+    }
+  }
+  update('content.content_decorations', currentDecos)
+}
+
 const ANIM_OPTIONS = [
   { value: 'none', label: 'Tidak Ada' },
   { value: 'float', label: 'Mengambang' },
@@ -87,7 +143,7 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
         v-for="tab in [{ key: 'cover', label: '🖼 Cover' }, { key: 'content', label: '📄 Konten' }]"
         :key="tab.key"
         type="button"
-        @click="activeTab = tab.key"
+        @click="switchTab(tab.key)"
         :class="[
           'flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition',
           activeTab === tab.key ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
@@ -133,16 +189,16 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
       <Label class="text-xs font-bold text-slate-700">🌸 Ornamen Dekorasi</Label>
 
       <!-- Slot Selector -->
-      <div class="flex gap-1">
+      <div class="grid grid-cols-4 gap-1">
         <button
-          v-for="(label, slot) in SLOT_LABELS"
+          v-for="(label, slot) in currentSlotLabels"
           :key="slot"
           type="button"
           @click="activeSlot = slot"
           :class="[
-            'flex-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition',
+            'rounded-lg border px-1.5 py-1.5 text-[11px] font-semibold transition text-center whitespace-nowrap',
             activeSlot === slot
-              ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+              ? 'border-emerald-400 bg-emerald-50 text-emerald-700 shadow-sm'
               : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
           ]"
         >{{ label }}</button>
@@ -165,12 +221,12 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
           <Label class="text-[10px] text-slate-500">Ukuran (px)</Label>
           <input
             type="range" min="40" max="500" step="10"
-            :value="currentSlotData.size || 180"
+            :value="currentSlotData.size || 160"
             :disabled="disabled"
             @input="updateSlot(currentLayer, activeSlot, 'size', +$event.target.value)"
             class="w-full accent-emerald-600"
           />
-          <span class="text-[10px] text-slate-400">{{ currentSlotData.size || 180 }}px</span>
+          <span class="text-[10px] text-slate-400">{{ currentSlotData.size || 160 }}px</span>
         </div>
         <div class="space-y-1">
           <Label class="text-[10px] text-slate-500">Opacity (%)</Label>
@@ -196,25 +252,44 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
         </div>
         <div class="col-span-2 grid grid-cols-2 gap-2">
           <div class="space-y-1">
-            <Label class="text-[10px] text-slate-500">Posisi X ({{ currentSlotData.x ?? 50 }}%)</Label>
+            <Label class="text-[10px] text-slate-500">Posisi X ({{ currentSlotData.x ?? defaultCoord(activeSlot, 'x') }}%)</Label>
             <input
-              type="range" min="0" max="100" step="1"
-              :value="currentSlotData.x ?? 50"
+              type="range" min="-20" max="120" step="1"
+              :value="currentSlotData.x ?? defaultCoord(activeSlot, 'x')"
               :disabled="disabled"
               @input="updateSlot(currentLayer, activeSlot, 'x', +$event.target.value)"
               class="w-full accent-emerald-600"
             />
           </div>
           <div class="space-y-1">
-            <Label class="text-[10px] text-slate-500">Posisi Y ({{ currentSlotData.y ?? 50 }}%)</Label>
+            <Label class="text-[10px] text-slate-500">Posisi Y ({{ currentSlotData.y ?? defaultCoord(activeSlot, 'y') }}%)</Label>
             <input
-              type="range" min="0" max="100" step="1"
-              :value="currentSlotData.y ?? 50"
+              type="range" min="-20" max="120" step="1"
+              :value="currentSlotData.y ?? defaultCoord(activeSlot, 'y')"
               :disabled="disabled"
               @input="updateSlot(currentLayer, activeSlot, 'y', +$event.target.value)"
               class="w-full accent-emerald-600"
             />
           </div>
+        </div>
+        <div class="col-span-2 flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60 mt-1">
+          <button
+            type="button"
+            :disabled="disabled"
+            @click="resetSlotPosition(activeSlot)"
+            class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition shadow-sm"
+          >
+            ↺ Reset Posisi Slot
+          </button>
+          <button
+            v-if="activeTab === 'content'"
+            type="button"
+            :disabled="disabled"
+            @click="resetAllCorners"
+            class="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition shadow-sm"
+          >
+            🎯 Reset 4 Sudut ke Default
+          </button>
         </div>
       </div>
     </div>
@@ -267,8 +342,10 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
       :character="activeTab === 'cover' ? character : {}"
       :coverBackground="activeTab === 'cover' ? coverBg : contentBg"
       :palette="palette"
+      :isContent="activeTab === 'content'"
       @update:decorations="update(activeTab === 'cover' ? 'content.cover_decorations' : 'content.content_decorations', $event)"
       @update:character="update('content.character_image', $event)"
+      @select:slot="activeSlot = $event"
     />
 
   </div>

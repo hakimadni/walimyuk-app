@@ -67,6 +67,64 @@ class WeddingBuilderTest extends TestCase
         $response->assertForbidden();
     }
 
+    public function test_builder_supports_4_corner_content_decorations(): void
+    {
+        $superAdmin = User::factory()->create(['role' => 'super_admin']);
+        $tenant = User::factory()->create(['role' => 'tenant']);
+        $wedding = Wedding::create($this->weddingPayload($tenant->id, 'builder-4-corners'));
+
+        $response = $this->actingAs($superAdmin)->put("/weddings/{$wedding->id}/builder", [
+            'builder' => [
+                'permissions' => [
+                    'custom_decorations' => true,
+                ],
+                'content' => [
+                    'content_decorations' => [
+                        'top_left' => [
+                            'type' => 'premium-kiri-atas',
+                            'x' => 0,
+                            'y' => 0,
+                            'size' => 160,
+                            'opacity' => 90,
+                            'animation' => 'none',
+                        ],
+                        'top_right' => [
+                            'type' => 'premium-kanan-atas',
+                            'x' => 100,
+                            'y' => 0,
+                            'size' => 160,
+                            'opacity' => 90,
+                            'animation' => 'none',
+                        ],
+                        'bottom_left' => [
+                            'type' => 'premium-kiri-bawah',
+                            'x' => 0,
+                            'y' => 100,
+                            'size' => 160,
+                            'opacity' => 90,
+                            'animation' => 'none',
+                        ],
+                        'bottom_right' => [
+                            'type' => 'premium-kanan-bawah',
+                            'x' => 100,
+                            'y' => 100,
+                            'size' => 160,
+                            'opacity' => 90,
+                            'animation' => 'none',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $wedding->refresh();
+        $this->assertEquals('premium-kiri-atas', $wedding->theme_config['builder']['content']['content_decorations']['top_left']['type']);
+        $this->assertEquals(0, $wedding->theme_config['builder']['content']['content_decorations']['top_left']['x']);
+        $this->assertEquals('premium-kanan-atas', $wedding->theme_config['builder']['content']['content_decorations']['top_right']['type']);
+        $this->assertEquals(100, $wedding->theme_config['builder']['content']['content_decorations']['top_right']['x']);
+    }
+
     private function weddingPayload(int $userId, string $slug): array
     {
         return [

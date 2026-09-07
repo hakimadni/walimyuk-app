@@ -20,7 +20,7 @@ const palette = computed(() => builder.value.content.palette)
       Terima kasih atas doa terbaik untuk kami.
     </p>
 
-    <div v-if="wishes.length" class="flex-1 space-y-3 overflow-y-auto pb-2">
+    <div v-if="wishes.length" class="flex-1 space-y-3 overflow-y-auto pb-2 scrollbar-hide">
       <div
         v-for="(wish, i) in wishes"
         :key="i"

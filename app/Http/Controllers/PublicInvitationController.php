@@ -37,7 +37,7 @@ class PublicInvitationController extends Controller
             'giftAddresses' => fn ($q) => $q->where('is_active', true),
         ]);
 
-        $existingRsvp = $guest->rsvp;
+        $existingRsvp = $guest?->rsvp;
         $approvedWishes = $wedding->wishes()
             ->where('moderation_status', 'approved')
             ->orderByDesc('created_at')

@@ -235,3 +235,34 @@
 .aos-animate .aos-delay-400, .aos-item.aos-animate.aos-delay-400 { transition-delay: 400ms; }
 .aos-animate .aos-delay-500, .aos-item.aos-animate.aos-delay-500 { transition-delay: 500ms; }
 
+/* ── Hide Scrollbar Utilities ────────────────────────────────── */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar,
+  .scrollbar-none::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .no-scrollbar,
+  .scrollbar-hide,
+  .scrollbar-none {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
+  .no-scrollbar *::-webkit-scrollbar,
+  .scrollbar-hide *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .no-scrollbar *,
+  .scrollbar-hide * {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+}
+

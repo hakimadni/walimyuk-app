@@ -134,6 +134,52 @@ class WeddingBuilderTenantAccessTest extends TestCase
         $this->assertSame('Masuk Yuk', data_get($wedding->theme_config, 'builder.content.custom_text.cover_button_label'));
     }
 
+    public function test_tenant_can_update_corner_decorations_when_permission_granted(): void
+    {
+        $tenant = User::factory()->create(['role' => 'tenant']);
+        $wedding = Wedding::create($this->weddingPayload($tenant->id, 'tenant-deco-corners'));
+
+        $wedding->update([
+            'theme_config' => [
+                'builder' => [
+                    'permissions' => [
+                        'tenant_builder_enabled' => true,
+                        'custom_decorations' => true,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($tenant)->put("/dashboard/my-weddings/{$wedding->id}/builder", [
+            'builder' => [
+                'content' => [
+                    'content_decorations' => [
+                        'top_left' => [
+                            'type' => 'premium-kiri-atas',
+                            'x' => 0,
+                            'y' => 0,
+                            'size' => 150,
+                            'opacity' => 90,
+                        ],
+                        'bottom_right' => [
+                            'type' => 'premium-kanan-bawah',
+                            'x' => 100,
+                            'y' => 100,
+                            'size' => 150,
+                            'opacity' => 90,
+                        ],
+                    ],
+                ],
+            ],
+        ])->assertRedirect("/dashboard/weddings/{$wedding->id}/builder");
+
+        $wedding->refresh();
+        $this->assertSame('premium-kiri-atas', data_get($wedding->theme_config, 'builder.content.content_decorations.top_left.type'));
+        $this->assertSame(0, data_get($wedding->theme_config, 'builder.content.content_decorations.top_left.x'));
+        $this->assertSame('premium-kanan-bawah', data_get($wedding->theme_config, 'builder.content.content_decorations.bottom_right.type'));
+        $this->assertSame(100, data_get($wedding->theme_config, 'builder.content.content_decorations.bottom_right.x'));
+    }
+
     private function weddingPayload(int $userId, string $slug): array
     {
         return [

@@ -51,10 +51,14 @@ class WeddingController extends Controller
                 'right'  => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' => 95, 'y' => 50, 'size' => 150, 'opacity' => 90],
             ],
             'content_decorations' => [
-                'top'    => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' => 50, 'y' =>  5, 'size' => 200, 'opacity' => 90],
-                'bottom' => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' => 50, 'y' => 90, 'size' => 200, 'opacity' => 90],
-                'left'   => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>  5, 'y' => 50, 'size' => 150, 'opacity' => 90],
-                'right'  => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' => 95, 'y' => 50, 'size' => 150, 'opacity' => 90],
+                'top_left'     => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>   0, 'y' =>   0, 'size' => 160, 'opacity' => 90],
+                'top_right'    => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' => 100, 'y' =>   0, 'size' => 160, 'opacity' => 90],
+                'bottom_left'  => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>   0, 'y' => 100, 'size' => 160, 'opacity' => 90],
+                'bottom_right' => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' => 100, 'y' => 100, 'size' => 160, 'opacity' => 90],
+                'top'          => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>  50, 'y' =>   5, 'size' => 200, 'opacity' => 90],
+                'bottom'       => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>  50, 'y' =>  90, 'size' => 200, 'opacity' => 90],
+                'left'         => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>   5, 'y' =>  50, 'size' => 150, 'opacity' => 90],
+                'right'        => ['type' => 'none', 'url' => null, 'uploaded_url' => null, 'animation' => 'none', 'x' =>  95, 'y' =>  50, 'size' => 150, 'opacity' => 90],
             ],
             'character_image' => ['type' => 'preset-couple-1', 'url' => null, 'uploaded_url' => null, 'size' => 120, 'x' => 50, 'y' => 35],
             'custom_text' => [
@@ -307,35 +311,16 @@ class WeddingController extends Controller
             'builder.content.cover_decorations.right.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'builder.content.cover_decorations.right.size' => ['nullable', 'integer', 'min:30', 'max:600'],
             'builder.content.cover_decorations.right.opacity' => ['nullable', 'integer', 'min:10', 'max:100'],
-            // Content decorations - 4 slots
-            'builder.content.content_decorations.top.type' => ['nullable', 'string', 'max:100'],
-            'builder.content.content_decorations.top.url' => ['nullable', 'string', 'max:1000'],
-            'builder.content.content_decorations.top.animation' => ['nullable', 'string', 'max:50'],
-            'builder.content.content_decorations.top.x' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.top.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.top.size' => ['nullable', 'integer', 'min:30', 'max:600'],
-            'builder.content.content_decorations.top.opacity' => ['nullable', 'integer', 'min:10', 'max:100'],
-            'builder.content.content_decorations.bottom.type' => ['nullable', 'string', 'max:100'],
-            'builder.content.content_decorations.bottom.url' => ['nullable', 'string', 'max:1000'],
-            'builder.content.content_decorations.bottom.animation' => ['nullable', 'string', 'max:50'],
-            'builder.content.content_decorations.bottom.x' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.bottom.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.bottom.size' => ['nullable', 'integer', 'min:30', 'max:600'],
-            'builder.content.content_decorations.bottom.opacity' => ['nullable', 'integer', 'min:10', 'max:100'],
-            'builder.content.content_decorations.left.type' => ['nullable', 'string', 'max:100'],
-            'builder.content.content_decorations.left.url' => ['nullable', 'string', 'max:1000'],
-            'builder.content.content_decorations.left.animation' => ['nullable', 'string', 'max:50'],
-            'builder.content.content_decorations.left.x' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.left.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.left.size' => ['nullable', 'integer', 'min:30', 'max:600'],
-            'builder.content.content_decorations.left.opacity' => ['nullable', 'integer', 'min:10', 'max:100'],
-            'builder.content.content_decorations.right.type' => ['nullable', 'string', 'max:100'],
-            'builder.content.content_decorations.right.url' => ['nullable', 'string', 'max:1000'],
-            'builder.content.content_decorations.right.animation' => ['nullable', 'string', 'max:50'],
-            'builder.content.content_decorations.right.x' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.right.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'builder.content.content_decorations.right.size' => ['nullable', 'integer', 'min:30', 'max:600'],
-            'builder.content.content_decorations.right.opacity' => ['nullable', 'integer', 'min:10', 'max:100'],
+            // Content decorations - 4 corner slots + legacy slots
+            'builder.content.content_decorations' => ['nullable', 'array'],
+            'builder.content.content_decorations.*.type' => ['nullable', 'string', 'max:100'],
+            'builder.content.content_decorations.*.url' => ['nullable', 'string', 'max:1000'],
+            'builder.content.content_decorations.*.uploaded_url' => ['nullable', 'string', 'max:1000'],
+            'builder.content.content_decorations.*.animation' => ['nullable', 'string', 'max:50'],
+            'builder.content.content_decorations.*.x' => ['nullable', 'numeric', 'min:-50', 'max:150'],
+            'builder.content.content_decorations.*.y' => ['nullable', 'numeric', 'min:-50', 'max:150'],
+            'builder.content.content_decorations.*.size' => ['nullable', 'integer', 'min:30', 'max:600'],
+            'builder.content.content_decorations.*.opacity' => ['nullable', 'integer', 'min:10', 'max:100'],
             // Cover background
             'builder.content.cover_background_image.type' => ['nullable', 'string', 'max:100'],
             'builder.content.cover_background_image.url' => ['nullable', 'string', 'max:1000'],
@@ -530,6 +515,10 @@ class WeddingController extends Controller
                 foreach (['type', 'url', 'uploaded_url', 'x', 'y', 'size', 'opacity'] as $field) {
                     data_set($allowed, "content.cover_decorations.{$slot}.{$field}",
                         data_get($incoming, "content.cover_decorations.{$slot}.{$field}"));
+                }
+            }
+            foreach (['top_left', 'top_right', 'bottom_left', 'bottom_right', 'top', 'bottom', 'left', 'right'] as $slot) {
+                foreach (['type', 'url', 'uploaded_url', 'x', 'y', 'size', 'opacity'] as $field) {
                     data_set($allowed, "content.content_decorations.{$slot}.{$field}",
                         data_get($incoming, "content.content_decorations.{$slot}.{$field}"));
                 }
@@ -541,6 +530,8 @@ class WeddingController extends Controller
             foreach (['top', 'bottom', 'left', 'right'] as $slot) {
                 data_set($allowed, "content.cover_decorations.{$slot}.animation",
                     data_get($incoming, "content.cover_decorations.{$slot}.animation"));
+            }
+            foreach (['top_left', 'top_right', 'bottom_left', 'bottom_right', 'top', 'bottom', 'left', 'right'] as $slot) {
                 data_set($allowed, "content.content_decorations.{$slot}.animation",
                     data_get($incoming, "content.content_decorations.{$slot}.animation"));
             }

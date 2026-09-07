@@ -45,8 +45,19 @@ export const PRESET_CHARACTERS = {
   'preset-couple-3': '❤',
 }
 
+export const DEFAULT_SLOT_COORDS = {
+  top_left:     { x: 0,   y: 0 },
+  top_right:    { x: 100, y: 0 },
+  bottom_left:  { x: 0,   y: 100 },
+  bottom_right: { x: 100, y: 100 },
+  top:          { x: 50,  y: 5 },
+  bottom:       { x: 50,  y: 90 },
+  left:         { x: 5,   y: 50 },
+  right:        { x: 95,  y: 50 },
+}
+
 function makeSlot(x, y, size) {
-  return { type: 'none', url: null, uploaded_url: null, animation: 'none', x: x, y: y, size: size || 180, opacity: 90 }
+  return { type: 'none', url: null, uploaded_url: null, animation: 'none', x: x, y: y, size: size || 140, opacity: 90 }
 }
 
 export function resolveBuilder(themeConfig) {
@@ -56,6 +67,30 @@ export function resolveBuilder(themeConfig) {
     if (!themeConfig.builder.content.couple_photo_frame) {
       themeConfig.builder.content.couple_photo_frame = 'circle'
     }
+    const cd = themeConfig.builder.content.content_decorations || {}
+    if (!cd.top_left) {
+      cd.top_left = makeSlot(0, 0, 140)
+      if (cd.left?.type && cd.left.type !== 'none') {
+        cd.top_left.type = cd.left.type
+        cd.top_left.url = cd.left.url
+        cd.top_left.uploaded_url = cd.left.uploaded_url
+      }
+    }
+    if (!cd.top_right) {
+      cd.top_right = makeSlot(100, 0, 140)
+      if (cd.right?.type && cd.right.type !== 'none') {
+        cd.top_right.type = cd.right.type
+        cd.top_right.url = cd.right.url
+        cd.top_right.uploaded_url = cd.right.uploaded_url
+      }
+    }
+    if (!cd.bottom_left) {
+      cd.bottom_left = makeSlot(0, 100, 110)
+    }
+    if (!cd.bottom_right) {
+      cd.bottom_right = makeSlot(100, 100, 110)
+    }
+    themeConfig.builder.content.content_decorations = cd
     return themeConfig.builder
   }
   return {
@@ -80,10 +115,10 @@ export function resolveBuilder(themeConfig) {
         right:  makeSlot(95, 50, 150),
       },
       content_decorations: {
-        top:    makeSlot(50,  5, 200),
-        bottom: makeSlot(50, 90, 200),
-        left:   makeSlot( 5, 50, 150),
-        right:  makeSlot(95, 50, 150),
+        top_left:     makeSlot(0,   0, 140),
+        top_right:    makeSlot(100, 0, 140),
+        bottom_left:  makeSlot(0, 100, 110),
+        bottom_right: makeSlot(100, 100, 110),
       },
       character_image: { type: 'preset-couple-1', url: null, uploaded_url: null, size: 120, x: 50, y: 35 },
       custom_text: {
@@ -167,4 +202,87 @@ export function isBlockEnabled(builder, blockId) {
 export function enabledBlocks(builder) {
   var blocks = (builder && builder.content && builder.content.blocks) || []
   return blocks.filter(function(item) { return item.enabled !== false })
+}
+
+export function getContentDecorationStyle(slot, deco, scale = 1) {
+  if (!deco) return {}
+  const rawX = deco.x !== undefined && deco.x !== null && deco.x !== '' ? +deco.x : (DEFAULT_SLOT_COORDS[slot]?.x ?? 0)
+  const rawY = deco.y !== undefined && deco.y !== null && deco.y !== '' ? +deco.y : (DEFAULT_SLOT_COORDS[slot]?.y ?? 0)
+  const defaultSize = (slot === 'bottom_left' || slot === 'bottom_right') ? 110 : 140
+  const size = (+deco.size || defaultSize) * scale
+  const opacity = (deco.opacity !== undefined && deco.opacity !== null ? +deco.opacity : 90) / 100
+
+  const base = {
+    width: `${Math.round(size)}px`,
+    opacity,
+    zIndex: 20,
+    position: 'absolute',
+    pointerEvents: 'none',
+  }
+
+  switch (slot) {
+    case 'top_left':
+      return {
+        ...base,
+        top: `${rawY}%`,
+        left: `${rawX}%`,
+        transform: 'translate(-20%, -20%)',
+      }
+    case 'top_right':
+      return {
+        ...base,
+        top: `${rawY}%`,
+        right: `${100 - rawX}%`,
+        transform: 'translate(20%, -20%)',
+      }
+    case 'bottom_left':
+      return {
+        ...base,
+        bottom: `${100 - rawY}%`,
+        left: `${rawX}%`,
+        transform: 'translate(-20%, 20%)',
+      }
+    case 'bottom_right':
+      return {
+        ...base,
+        bottom: `${100 - rawY}%`,
+        right: `${100 - rawX}%`,
+        transform: 'translate(20%, 20%)',
+      }
+    case 'top':
+      return {
+        ...base,
+        top: `${rawY}%`,
+        left: `${rawX}%`,
+        transform: 'translate(-50%, -50%)',
+      }
+    case 'bottom':
+      return {
+        ...base,
+        bottom: `${100 - rawY}%`,
+        left: `${rawX}%`,
+        transform: 'translate(-50%, 50%)',
+      }
+    case 'left':
+      return {
+        ...base,
+        top: `${rawY}%`,
+        left: `${rawX}%`,
+        transform: 'translate(-50%, -50%)',
+      }
+    case 'right':
+      return {
+        ...base,
+        top: `${rawY}%`,
+        right: `${100 - rawX}%`,
+        transform: 'translate(50%, -50%)',
+      }
+    default:
+      return {
+        ...base,
+        top: `${rawY}%`,
+        left: `${rawX}%`,
+        transform: 'translate(-50%, -50%)',
+      }
+  }
 }
