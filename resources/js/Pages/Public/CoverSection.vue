@@ -129,12 +129,12 @@ const guestCardBgStyle = computed(() => {
     <!-- ── Character / Illustration ───────────────────────────────── -->
     <div
       v-if="character.type !== 'none'"
-      class="pointer-events-none absolute flex items-end justify-center"
+      class="pointer-events-none absolute flex items-center justify-center"
       :style="{
         left:      (charItem.x ?? 50) + '%',
-        bottom:    '155px', /* Posisi proporsional: batas bawah sedikit tertimpa di balik card tamu */
-        transform: 'translateX(-50%)',
-        width:     (charItem.size ?? 360) + 'px',
+        top:       (charItem.y ?? 55) + '%',
+        transform: 'translate(-50%, -50%)',
+        width:     (charItem.size ?? 280) + 'px',
         maxWidth:  '90vw',
         zIndex:    5,
       }"
@@ -142,7 +142,7 @@ const guestCardBgStyle = computed(() => {
       <img
         v-if="character.type === 'image'"
         :src="character.value"
-        class="h-auto w-full max-h-[48vh] object-contain object-bottom anim-fade-in delay-200 drop-shadow-md"
+        class="h-auto w-full max-h-[48vh] object-contain anim-fade-in delay-200 drop-shadow-md"
         alt=""
       />
       <span v-else class="text-7xl leading-none anim-fade-in delay-200 inline-block select-none">{{ character.value }}</span>

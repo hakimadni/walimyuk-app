@@ -377,20 +377,20 @@ onUnmounted(() => {
             <!-- White Frosted Card Content -->
             <div 
               class="relative z-10 w-full rounded-[2rem] shadow-xl backdrop-blur-md border border-white/20 overflow-hidden aos-item aos-zoom-in"
-              :style="{ backgroundColor: 'rgba(255, 255, 255, 0.75)' }"
+              :style="{ backgroundColor: 'rgba(255, 255, 255, 0.94)' }"
             >
               <component :is="section.component" v-bind="section.getProps()" class="w-full relative z-10" />
             </div>
 
             <!-- Content Decorations Overlay (IN FRONT of card, z-20, overflow-visible) -->
             <div class="pointer-events-none absolute inset-0 z-20 overflow-visible">
-              <template v-for="slot in ['top_left', 'top_right', 'bottom_left', 'bottom_right', 'top', 'bottom', 'left', 'right']" :key="slot">
+              <template v-for="slot in ['top_left', 'top_right', 'bottom_left', 'bottom_right']" :key="slot">
                 <div
                   v-if="resolveAssetUrl(contentDecos[slot])"
                   :style="getContentDecorationStyle(slot, contentDecos[slot])"
                 >
-                  <div :class="animationClass(contentDecos[slot]?.animation)" class="w-full h-full">
-                    <img :src="resolveAssetUrl(contentDecos[slot])" class="h-auto w-full object-contain" alt="" />
+                  <div :class="animationClass(contentDecos[slot]?.animation)" class="w-full h-full flex items-center justify-center">
+                    <img :src="resolveAssetUrl(contentDecos[slot])" class="max-h-full max-w-full h-auto w-auto object-contain" alt="" />
                   </div>
                 </div>
               </template>

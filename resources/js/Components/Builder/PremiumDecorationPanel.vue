@@ -313,16 +313,16 @@ const contentDecos = computed(() => props.builder.content?.content_decorations |
       <!-- Character controls -->
       <div v-if="character.type && character.type !== 'none'" class="grid grid-cols-2 gap-3">
         <div class="space-y-1">
-          <Label class="text-[10px] text-slate-500">Ukuran ({{ character.size || 120 }}px)</Label>
+          <Label class="text-[10px] text-slate-500">Ukuran ({{ character.size || 240 }}px)</Label>
           <input type="range" min="40" max="400" step="10"
-            :value="character.size || 120" :disabled="disabled"
+            :value="character.size || 240" :disabled="disabled"
             @input="update('content.character_image.size', +$event.target.value)"
             class="w-full accent-purple-600" />
         </div>
         <div class="space-y-1">
-          <Label class="text-[10px] text-slate-500">Posisi Y ({{ character.y ?? 35 }}%)</Label>
+          <Label class="text-[10px] text-slate-500">Posisi Y ({{ character.y ?? 55 }}%)</Label>
           <input type="range" min="0" max="100" step="1"
-            :value="character.y ?? 35" :disabled="disabled"
+            :value="character.y ?? 55" :disabled="disabled"
             @input="update('content.character_image.y', +$event.target.value)"
             class="w-full accent-purple-600" />
         </div>

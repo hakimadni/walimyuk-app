@@ -90,6 +90,11 @@ export function resolveBuilder(themeConfig) {
     if (!cd.bottom_right) {
       cd.bottom_right = makeSlot(100, 100, 110)
     }
+    // Delete legacy slots so they are never accidentally rendered in content cards
+    delete cd.top
+    delete cd.bottom
+    delete cd.left
+    delete cd.right
     themeConfig.builder.content.content_decorations = cd
     return themeConfig.builder
   }
@@ -120,7 +125,7 @@ export function resolveBuilder(themeConfig) {
         bottom_left:  makeSlot(0, 100, 110),
         bottom_right: makeSlot(100, 100, 110),
       },
-      character_image: { type: 'preset-couple-1', url: null, uploaded_url: null, size: 120, x: 50, y: 35 },
+      character_image: { type: 'preset-couple-1', url: null, uploaded_url: null, size: 240, x: 50, y: 55 },
       custom_text: {
         cover_intro: null,
         cover_button_label: 'Buka Undangan',
@@ -214,6 +219,8 @@ export function getContentDecorationStyle(slot, deco, scale = 1) {
 
   const base = {
     width: `${Math.round(size)}px`,
+    maxHeight: '38%',
+    maxWidth: '38%',
     opacity,
     zIndex: 20,
     position: 'absolute',
@@ -248,34 +255,6 @@ export function getContentDecorationStyle(slot, deco, scale = 1) {
         bottom: `${100 - rawY}%`,
         right: `${100 - rawX}%`,
         transform: 'translate(20%, 20%)',
-      }
-    case 'top':
-      return {
-        ...base,
-        top: `${rawY}%`,
-        left: `${rawX}%`,
-        transform: 'translate(-50%, -50%)',
-      }
-    case 'bottom':
-      return {
-        ...base,
-        bottom: `${100 - rawY}%`,
-        left: `${rawX}%`,
-        transform: 'translate(-50%, 50%)',
-      }
-    case 'left':
-      return {
-        ...base,
-        top: `${rawY}%`,
-        left: `${rawX}%`,
-        transform: 'translate(-50%, -50%)',
-      }
-    case 'right':
-      return {
-        ...base,
-        top: `${rawY}%`,
-        right: `${100 - rawX}%`,
-        transform: 'translate(50%, -50%)',
       }
     default:
       return {

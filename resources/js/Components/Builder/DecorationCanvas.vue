@@ -209,7 +209,7 @@ function stopDrag() {
           class="absolute z-10 cursor-grab active:cursor-grabbing"
           :style="{
             left: (character?.x ?? 50) + '%',
-            top: (character?.y ?? 35) + '%',
+            top: (character?.y ?? 55) + '%',
             transform: 'translate(-50%, -50%)',
             width: Math.min(character?.size ?? 100, 140) + 'px',
           }"
