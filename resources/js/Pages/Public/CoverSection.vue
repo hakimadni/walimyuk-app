@@ -107,7 +107,7 @@ const guestCardBgStyle = computed(() => {
     <!-- ── Top Area: The Wedding Of & Nama Mempelai ────────── -->
     <div
       class="pointer-events-none absolute top-0 left-0 right-0 z-10 flex flex-col items-center px-6 text-center anim-fade-down"
-      :style="{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${(builder.content.cover_top_spacing ?? 175)}px)` }"
+      :style="{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${(builder.content.cover_top_spacing ?? 84)}px)` }"
     >
       <!-- The Wedding Of -->
       <p class="font-serif italic text-xs sm:text-sm tracking-wider opacity-90 mb-1 anim-fade-down delay-100" :style="{ color: palette.text, ...textEffectStyle }">

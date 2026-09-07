@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,25 +26,51 @@ const previewTab = ref('cover') // 'cover' | 'content'
 const draggedIndex = ref(null)
 const dragOverIndex = ref(null)
 const previewIframe = ref(null)
+const previewWrapper = ref(null)
 const previewContainer = ref(null)
-const previewScale = ref(1)
+const previewScale = ref(0.8)
+const displayWidth = ref(314)
+const displayHeight = ref(681)
 const musicFileName = ref('')
 const musicFileError = ref('')
 
+let resizeObserver = null
+
 function updateScale() {
-  if (previewContainer.value) {
-    const width = previewContainer.value.clientWidth
-    previewScale.value = width / 393
-  }
+  const NATIVE_W = 393
+  const NATIVE_H = 852
+
+  const availableWidth = previewWrapper.value?.clientWidth || 340
+  // Available viewport height: window.innerHeight minus top sticky offset, card header/footer, padding, and bottom margin
+  const availableHeight = Math.max(360, window.innerHeight - 150)
+
+  const scaleByW = availableWidth / NATIVE_W
+  const scaleByH = availableHeight / NATIVE_H
+
+  // Fit within BOTH width and height so phone is never cut off
+  const scale = Math.min(scaleByW, scaleByH, 0.95)
+  previewScale.value = Math.max(0.45, Math.round(scale * 1000) / 1000)
+
+  displayWidth.value = Math.round(NATIVE_W * previewScale.value)
+  displayHeight.value = Math.round(NATIVE_H * previewScale.value)
 }
 
 onMounted(() => {
-  updateScale()
+  nextTick(() => {
+    updateScale()
+  })
   window.addEventListener('resize', updateScale)
+  if (previewWrapper.value && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      updateScale()
+    })
+    resizeObserver.observe(previewWrapper.value)
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateScale)
+  if (resizeObserver) resizeObserver.disconnect()
 })
 
 watch(() => form.builder, (newBuilder) => {
@@ -196,9 +222,9 @@ function lockDisabled(permissionKey) {
       </div>
     </template>
 
-    <div class="py-6">
-      <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-        <form @submit.prevent="submit" class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(380px,1fr)]">
+    <div class="pt-1 pb-6">
+      <div class="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+        <form @submit.prevent="submit" class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <!-- Left Column: Settings Form -->
           <div class="space-y-6">
             <!-- Permission Matrix Card -->
@@ -538,58 +564,103 @@ function lockDisabled(permissionKey) {
           </div>
 
           <!-- Right Column: Interactive Live Preview Phone Mockup -->
-          <aside class="space-y-6">
-            <div class="sticky top-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h3 class="font-serif text-base font-bold text-emerald-950">Live Preview Interaktif</h3>
-                  <p class="text-[11px] text-slate-400">iPhone 14 (393 × 852 px)</p>
+          <aside class="space-y-4">
+            <div class="sticky top-2 sm:top-3 lg:top-4 rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm">
+              <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <h3 class="font-serif text-sm sm:text-base font-bold text-emerald-950">Live Preview</h3>
                 </div>
-                <span class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">
-                  393 × 852
-                </span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
+                    {{ Math.round(previewScale * 100) }}%
+                  </span>
+                  <a v-if="previewUrl" :href="previewUrl" target="_blank" class="p-1 text-slate-400 hover:text-emerald-700 hover:bg-slate-100 rounded-md transition" title="Buka di tab baru">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
               </div>
 
-              <!-- Phone Screen Mockup Frame (iPhone 14 Style) -->
-              <div class="mt-4 overflow-hidden rounded-[44px] border-[8px] border-slate-900 shadow-2xl bg-slate-950 relative">
-                <!-- Phone Dynamic Island -->
-                <div class="absolute top-2.5 inset-x-0 z-50 flex justify-center items-center pointer-events-none">
-                  <div class="h-5 w-24 rounded-full bg-black flex items-center justify-end pr-2.5 shadow-inner">
-                    <div class="h-2 w-2 rounded-full bg-slate-900 border border-slate-800"></div>
+              <!-- Phone Screen Mockup Frame Wrapper -->
+              <div ref="previewWrapper" class="mt-2.5 flex justify-center items-center overflow-hidden">
+                <div 
+                  class="relative overflow-hidden rounded-[36px] sm:rounded-[40px] border-[6px] sm:border-[7px] border-slate-900 shadow-2xl bg-slate-950 transition-all duration-150"
+                  :style="{
+                    width: `${displayWidth + 12}px`,
+                    height: `${displayHeight + 12}px`,
+                  }"
+                >
+                  <!-- Phone Dynamic Island -->
+                  <div class="absolute top-2 inset-x-0 z-50 flex justify-center items-center pointer-events-none">
+                    <div 
+                      class="rounded-full bg-black flex items-center justify-end pr-2 shadow-inner"
+                      :style="{
+                        width: `${Math.round(84 * Math.min(1, previewScale * 1.1))}px`,
+                        height: `${Math.round(18 * Math.min(1, previewScale * 1.1))}px`,
+                      }"
+                    >
+                      <div 
+                        class="rounded-full bg-slate-900 border border-slate-800"
+                        :style="{
+                          width: `${Math.max(4, Math.round(6 * previewScale))}px`,
+                          height: `${Math.max(4, Math.round(6 * previewScale))}px`,
+                        }"
+                      ></div>
+                    </div>
                   </div>
-                </div>
 
-                <!-- Preview Viewport Screen (393x852) -->
-                <div class="relative w-full aspect-[393/852] bg-white overflow-hidden" ref="previewContainer">
-                  <iframe 
-                    v-if="previewUrl" 
-                    ref="previewIframe" 
-                    :src="previewUrl" 
-                    class="absolute top-0 left-0 border-0" 
-                    :style="{ 
-                      width: '393px', 
-                      height: '852px', 
-                      transform: `scale(${previewScale})`, 
-                      transformOrigin: 'top left' 
+                  <!-- Preview Viewport Screen (393x852 scaled) -->
+                  <div 
+                    ref="previewContainer" 
+                    class="relative bg-white overflow-hidden"
+                    :style="{
+                      width: `${displayWidth}px`,
+                      height: `${displayHeight}px`,
                     }"
-                  ></iframe>
-                  <div v-else class="flex h-full items-center justify-center p-6 text-center text-slate-400 text-sm">
-                    Live preview belum tersedia. Silakan simpan builder pertama kali.
+                  >
+                    <iframe 
+                      v-if="previewUrl" 
+                      ref="previewIframe" 
+                      :src="previewUrl" 
+                      class="absolute top-0 left-0 border-0" 
+                      :style="{ 
+                        width: '393px', 
+                        height: '852px', 
+                        transform: `scale(${previewScale})`, 
+                        transformOrigin: 'top left' 
+                      }"
+                    ></iframe>
+                    <div v-else class="flex h-full items-center justify-center p-6 text-center text-slate-400 text-xs">
+                      Live preview belum tersedia. Silakan simpan builder pertama kali.
+                    </div>
+                  </div>
+
+                  <!-- Phone Home Indicator Bar -->
+                  <div class="absolute bottom-1.5 inset-x-0 z-50 flex justify-center items-center pointer-events-none">
+                    <div 
+                      class="rounded-full bg-slate-400/40"
+                      :style="{
+                        width: `${Math.round(90 * previewScale)}px`,
+                        height: '3px',
+                      }"
+                    ></div>
                   </div>
                 </div>
               </div>
 
               <!-- Quick Info Footer -->
-              <div class="mt-4 space-y-1 text-xs text-slate-500">
-                <p><span class="font-semibold text-slate-700">Musik latar:</span> {{ previewMusicUrl ? 'Aktif' : 'Tidak ada musik' }}</p>
-                <p v-if="previewUrl">
-                  <a :href="previewUrl" target="_blank" class="font-semibold text-emerald-700 hover:underline flex items-center gap-1 mt-1">
-                    <span>Lihat Full Invitation Online</span>
-                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                </p>
+              <div class="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
+                <span class="truncate">
+                  🎵 Musik: <span class="font-semibold text-slate-700">{{ previewMusicUrl ? 'Aktif' : 'Off' }}</span>
+                </span>
+                <a v-if="previewUrl" :href="previewUrl" target="_blank" class="font-semibold text-emerald-700 hover:underline flex items-center gap-0.5 shrink-0">
+                  <span>Tab Baru</span>
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               </div>
             </div>
           </aside>

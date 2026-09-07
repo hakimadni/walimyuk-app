@@ -104,6 +104,7 @@ export function resolveBuilder(themeConfig) {
       font_family: 'font-sans',
       cover_text_effect: 'none',
       couple_photo_frame: 'circle',
+      cover_top_spacing: 84,
       palette: {
         primary: '#065f46',
         secondary: '#d4af37',
