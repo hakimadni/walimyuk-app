@@ -4,6 +4,7 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useConfirm } from '@/Composables/useConfirm'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -51,8 +52,17 @@ function reject(wish) {
   })
 }
 
-function deleteWish(wish) {
-  if (confirm(`Hapus ucapan dan doa dari "${wish.name || wish.guest?.name || 'Tamu'}"?`)) {
+const { confirm } = useConfirm()
+
+async function deleteWish(wish) {
+  const confirmed = await confirm({
+    title: 'Hapus Ucapan & Doa?',
+    description: `Hapus ucapan dan doa dari "${wish.name || wish.guest?.name || 'Tamu'}"? Tindakan ini tidak dapat dibatalkan.`,
+    confirmText: 'Hapus Ucapan',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     router.delete(`/weddings/${props.wedding.id}/wishes/${wish.id}`, {
       preserveScroll: true,
     })

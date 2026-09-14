@@ -5,6 +5,7 @@ import { ref, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { useConfirm } from '@/Composables/useConfirm'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -164,8 +165,17 @@ function cancelEditNotes() {
   notesDraft.value = ''
 }
 
-function deleteItem(item) {
-  if (confirm(`Hapus "${item.document_name}" dari daftar persyaratan?`)) {
+const { confirm } = useConfirm()
+
+async function deleteItem(item) {
+  const confirmed = await confirm({
+    title: 'Hapus Dokumen Persyaratan?',
+    description: `Apakah Anda yakin ingin menghapus "${item.document_name}" dari daftar persyaratan?`,
+    confirmText: 'Hapus Dokumen',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     router.delete(`/weddings/${props.wedding.id}/document-checklist/${item.id}`, {
       preserveScroll: true,
     })

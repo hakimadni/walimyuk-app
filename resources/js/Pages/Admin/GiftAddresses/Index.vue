@@ -2,14 +2,24 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/Composables/useConfirm'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
   addresses: { type: Array, default: () => [] },
 })
 
-function deleteAddress(addr) {
-  if (confirm(`Hapus alamat kirim kado "${addr.recipient_name}"?`)) {
+const { confirm } = useConfirm()
+
+async function deleteAddress(addr) {
+  const confirmed = await confirm({
+    title: 'Hapus Alamat Kirim Kado?',
+    description: `Apakah Anda yakin ingin menghapus alamat penerima "${addr.recipient_name}"? Tindakan ini tidak dapat dibatalkan.`,
+    confirmText: 'Hapus Alamat',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     router.delete(`/weddings/${props.wedding.id}/gift-addresses/${addr.id}`, {
       preserveScroll: true,
     })

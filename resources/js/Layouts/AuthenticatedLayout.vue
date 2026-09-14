@@ -1,11 +1,29 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
-import { Link } from '@inertiajs/vue3';
+import GlobalConfirmDialog from '@/Components/GlobalConfirmDialog.vue';
+import ToastContainer from '@/Components/ToastContainer.vue';
+import { useToast } from '@/Composables/useToast';
+import { Link, usePage } from '@inertiajs/vue3';
 
 const showingMobileMenu = ref(false);
+const page = usePage();
+const toast = useToast();
+
+watch(
+  () => page.props.flash,
+  (flash) => {
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+  },
+  { deep: true }
+);
 </script>
 
 <template>
@@ -134,5 +152,9 @@ const showingMobileMenu = ref(false);
         <slot />
       </main>
     </div>
+
+    <!-- Global confirmation dialog & toast notifications -->
+    <GlobalConfirmDialog />
+    <ToastContainer />
   </div>
 </template>

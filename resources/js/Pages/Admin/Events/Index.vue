@@ -2,14 +2,24 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/Composables/useConfirm'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
   events: { type: Array, default: () => [] },
 })
 
-function deleteEvent(event) {
-  if (confirm(`Apakah Anda yakin ingin menghapus jadwal acara "${event.title}"?`)) {
+const { confirm } = useConfirm()
+
+async function deleteEvent(event) {
+  const confirmed = await confirm({
+    title: 'Hapus Jadwal Acara?',
+    description: `Apakah Anda yakin ingin menghapus jadwal acara "${event.title}"?`,
+    confirmText: 'Hapus Acara',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     router.delete(`/weddings/${props.wedding.id}/events/${event.id}`, {
       preserveScroll: true,
     })

@@ -1,15 +1,24 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import { useConfirm } from '@/Composables/useConfirm'
 
 defineProps({
   users: Array
 })
 
 const deleteForm = useForm({})
+const { confirm } = useConfirm()
 
-function destroy(id) {
-  if (confirm('Yakin ingin menghapus pengguna ini? Semua undangan miliknya akan ikut terhapus!')) {
+async function destroy(id) {
+  const confirmed = await confirm({
+    title: 'Hapus Pengguna?',
+    description: 'Yakin ingin menghapus pengguna ini? Semua undangan dan data miliknya akan ikut terhapus secara permanen!',
+    confirmText: 'Hapus Pengguna',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     deleteForm.delete(`/users/${id}`)
   }
 }

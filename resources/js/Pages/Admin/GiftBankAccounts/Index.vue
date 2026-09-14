@@ -2,14 +2,24 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/Composables/useConfirm'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
   accounts: { type: Array, default: () => [] },
 })
 
-function deleteAccount(acc) {
-  if (confirm(`Hapus rekening "${acc.bank_name} - ${acc.account_number}"?`)) {
+const { confirm } = useConfirm()
+
+async function deleteAccount(acc) {
+  const confirmed = await confirm({
+    title: 'Hapus Rekening Bank / E-Wallet?',
+    description: `Apakah Anda yakin ingin menghapus rekening "${acc.bank_name} - ${acc.account_number}"? Tindakan ini tidak dapat dibatalkan.`,
+    confirmText: 'Hapus Rekening',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     router.delete(`/weddings/${props.wedding.id}/gift-bank-accounts/${acc.id}`, {
       preserveScroll: true,
     })

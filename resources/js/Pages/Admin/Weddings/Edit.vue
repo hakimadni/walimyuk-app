@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { DateTimePicker } from '@/components/ui/datetime-picker'
 import InputError from '@/Components/InputError.vue'
+import { useConfirm } from '@/Composables/useConfirm'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -56,8 +57,17 @@ function submit() {
   form.put(`/weddings/${props.wedding.id}`)
 }
 
-function destroy() {
-  if (confirm('Yakin ingin menghapus undangan ini?')) {
+const { confirm } = useConfirm()
+
+async function destroy() {
+  const confirmed = await confirm({
+    title: 'Hapus Data Undangan?',
+    description: 'Yakin ingin menghapus undangan ini? Semua data terkait (tamu, ucapan, acara, dokumen) akan ikut terhapus.',
+    confirmText: 'Hapus Undangan',
+    variant: 'danger',
+  })
+
+  if (confirmed) {
     form.delete(`/weddings/${props.wedding.id}`)
   }
 }

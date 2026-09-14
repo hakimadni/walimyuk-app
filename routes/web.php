@@ -101,15 +101,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ─── Nested under a specific wedding ───
     Route::prefix('weddings/{wedding}')->group(function () {
 
-        // Guests (full CRUD + import/export/mark-sent)
-        Route::resource('guests', GuestController::class)
-            ->names('dashboard.weddings.guests');
+        // Guests (bulk actions + import/export/mark-sent + full CRUD)
+        Route::post('guests/bulk-delete', [GuestController::class, 'bulkDelete'])
+            ->name('dashboard.weddings.guests.bulk-delete');
+        Route::post('guests/bulk-edit', [GuestController::class, 'bulkEdit'])
+            ->name('dashboard.weddings.guests.bulk-edit');
+        Route::post('guests/bulk-mark-sent', [GuestController::class, 'bulkMarkSent'])
+            ->name('dashboard.weddings.guests.bulk-mark-sent');
         Route::post('guests/import', [GuestController::class, 'import'])
             ->name('dashboard.weddings.guests.import');
         Route::get('guests/export', [GuestController::class, 'export'])
             ->name('dashboard.weddings.guests.export');
+        Route::get('guests/template', [GuestController::class, 'template'])
+            ->name('dashboard.weddings.guests.template');
         Route::post('guests/{guest}/mark-sent', [GuestController::class, 'markSent'])
             ->name('dashboard.weddings.guests.mark-sent');
+        Route::resource('guests', GuestController::class)
+            ->names('dashboard.weddings.guests');
 
         // RSVPs (index + analytics + export)
         Route::get('rsvps', [RsvpController::class, 'index'])
