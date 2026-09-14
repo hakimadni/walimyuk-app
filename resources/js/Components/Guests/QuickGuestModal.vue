@@ -10,6 +10,7 @@ const props = defineProps({
   guest: { type: Object, default: null }, // null = create mode, object = edit mode
   weddingId: { type: [Number, String], required: true },
   availableGroups: { type: Array, default: () => [] },
+  availableSessions: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['update:open', 'saved'])
@@ -18,6 +19,7 @@ const form = ref({
   name: '',
   phone_number: '',
   group_name: '',
+  session_name: '',
   max_pax: 2,
   notes: '',
 })
@@ -35,6 +37,7 @@ watch(
           name: guest.name || '',
           phone_number: guest.phone_number || '',
           group_name: guest.group_name || '',
+          session_name: guest.session_name || '',
           max_pax: guest.max_pax || 2,
           notes: guest.notes || '',
         }
@@ -43,6 +46,7 @@ watch(
           name: '',
           phone_number: '',
           group_name: '',
+          session_name: '',
           max_pax: 2,
           notes: '',
         }
@@ -166,10 +170,10 @@ function submit() {
                 <Input
                   v-model="form.group_name"
                   placeholder="Keluarga, VIP, Teman..."
-                  list="groups-list"
+                  list="quick-groups-list"
                   class="text-xs"
                 />
-                <datalist id="groups-list">
+                <datalist id="quick-groups-list">
                   <option v-for="g in availableGroups" :key="g" :value="g" />
                 </datalist>
                 <p v-if="errors.group_name" class="text-[11px] text-rose-500">{{ errors.group_name }}</p>
@@ -187,6 +191,21 @@ function submit() {
                 />
                 <p v-if="errors.max_pax" class="text-[11px] text-rose-500">{{ errors.max_pax }}</p>
               </div>
+            </div>
+
+            <!-- Sesi Acara -->
+            <div class="space-y-1">
+              <Label class="text-xs font-semibold text-slate-700">Sesi Acara</Label>
+              <Input
+                v-model="form.session_name"
+                placeholder="Contoh: Sesi Akad (08.00-10.00) atau Sesi Resepsi..."
+                list="quick-sessions-list"
+                class="text-xs"
+              />
+              <datalist id="quick-sessions-list">
+                <option v-for="s in availableSessions" :key="s" :value="s" />
+              </datalist>
+              <p v-if="errors.session_name" class="text-[11px] text-rose-500">{{ errors.session_name }}</p>
             </div>
 
             <!-- Catatan -->

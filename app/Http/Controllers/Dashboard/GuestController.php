@@ -29,6 +29,7 @@ class GuestController extends Controller
                 $sub->where('name', 'like', "%{$q}%")
                     ->orWhere('phone_number', 'like', "%{$q}%")
                     ->orWhere('group_name', 'like', "%{$q}%")
+                    ->orWhere('session_name', 'like', "%{$q}%")
                     ->orWhere('notes', 'like', "%{$q}%");
             });
         }
@@ -40,6 +41,16 @@ class GuestController extends Controller
                 });
             } else {
                 $query->where('group_name', $request->input('group'));
+            }
+        }
+
+        if ($request->filled('session') && $request->input('session') !== 'all') {
+            if ($request->input('session') === '_none_') {
+                $query->where(function ($sub) {
+                    $sub->whereNull('session_name')->orWhere('session_name', '');
+                });
+            } else {
+                $query->where('session_name', $request->input('session'));
             }
         }
 
@@ -64,7 +75,7 @@ class GuestController extends Controller
 
         $sort = $request->input('sort', 'name');
         $direction = $request->input('direction', 'asc') === 'desc' ? 'desc' : 'asc';
-        if (in_array($sort, ['name', 'group_name', 'max_pax', 'created_at'])) {
+        if (in_array($sort, ['name', 'group_name', 'session_name', 'max_pax', 'created_at'])) {
             $query->orderBy($sort, $direction);
         } else {
             $query->orderBy('name', 'asc');
@@ -78,6 +89,14 @@ class GuestController extends Controller
             ->where('group_name', '!=', '')
             ->distinct()
             ->pluck('group_name')
+            ->sort()
+            ->values();
+
+        $availableSessions = $wedding->guests()
+            ->whereNotNull('session_name')
+            ->where('session_name', '!=', '')
+            ->distinct()
+            ->pluck('session_name')
             ->sort()
             ->values();
 
@@ -95,10 +114,12 @@ class GuestController extends Controller
             'wedding' => $wedding,
             'guests' => $guests,
             'availableGroups' => $availableGroups,
+            'availableSessions' => $availableSessions,
             'stats' => $stats,
             'filters' => [
                 'search' => $request->input('search', ''),
                 'group' => $request->input('group', 'all'),
+                'session' => $request->input('session', 'all'),
                 'status' => $request->input('status', 'all'),
                 'sent' => $request->input('sent', 'all'),
                 'sort' => $sort,
@@ -181,6 +202,7 @@ class GuestController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'phone_number' => ['nullable', 'string', 'max:20'],
             'group_name' => ['nullable', 'string', 'max:100'],
+            'session_name' => ['nullable', 'string', 'max:150'],
             'max_pax' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -254,6 +276,8 @@ class GuestController extends Controller
             'guest_ids.*' => ['required', 'integer'],
             'apply_group_name' => ['nullable', 'boolean'],
             'group_name' => ['nullable', 'string', 'max:100'],
+            'apply_session_name' => ['nullable', 'boolean'],
+            'session_name' => ['nullable', 'string', 'max:150'],
             'apply_max_pax' => ['nullable', 'boolean'],
             'max_pax' => ['nullable', 'integer', 'min:1', 'max:50'],
             'apply_is_invitation_sent' => ['nullable', 'boolean'],
@@ -265,6 +289,9 @@ class GuestController extends Controller
         $updates = [];
         if (!empty($validated['apply_group_name'])) {
             $updates['group_name'] = !empty($validated['group_name']) ? trim($validated['group_name']) : null;
+        }
+        if (!empty($validated['apply_session_name'])) {
+            $updates['session_name'] = !empty($validated['session_name']) ? trim($validated['session_name']) : null;
         }
         if (!empty($validated['apply_max_pax'])) {
             $updates['max_pax'] = (int) $validated['max_pax'];
@@ -341,6 +368,10 @@ class GuestController extends Controller
                 $sheet = $spreadsheet->getActiveSheet();
                 $highestRow = $sheet->getHighestDataRow();
 
+                // Check header row 1 to detect if Sesi column is present
+                $colEHeader = trim((string) $sheet->getCell('E1')->getCalculatedValue());
+                $hasSesiCol = stripos($colEHeader, 'sesi') !== false;
+
                 for ($row = 2; $row <= $highestRow; $row++) {
                     $name = trim((string) $sheet->getCell("A{$row}")->getCalculatedValue());
                     if (empty($name)) {
@@ -356,13 +387,23 @@ class GuestController extends Controller
                     $maxPaxRaw = $sheet->getCell("D{$row}")->getCalculatedValue();
                     $maxPax = is_numeric($maxPaxRaw) ? max(1, (int) $maxPaxRaw) : 2;
 
-                    $notes = trim((string) $sheet->getCell("E{$row}")->getCalculatedValue());
-                    $notes = $notes !== '' ? $notes : null;
+                    if ($hasSesiCol) {
+                        $session = trim((string) $sheet->getCell("E{$row}")->getCalculatedValue());
+                        $session = $session !== '' ? $session : null;
+
+                        $notes = trim((string) $sheet->getCell("F{$row}")->getCalculatedValue());
+                        $notes = $notes !== '' ? $notes : null;
+                    } else {
+                        $session = null;
+                        $notes = trim((string) $sheet->getCell("E{$row}")->getCalculatedValue());
+                        $notes = $notes !== '' ? $notes : null;
+                    }
 
                     $wedding->guests()->create([
                         'name' => $name,
                         'phone_number' => $phone,
                         'group_name' => $group,
+                        'session_name' => $session,
                         'max_pax' => $maxPax,
                         'notes' => $notes,
                         'token' => Str::random(64),
@@ -385,6 +426,7 @@ class GuestController extends Controller
                     'name' => (string) $row['name'],
                     'phone_number' => isset($row['phone_number']) ? (string) $row['phone_number'] : null,
                     'group_name' => isset($row['group_name']) ? (string) $row['group_name'] : null,
+                    'session_name' => isset($row['session_name']) ? (string) $row['session_name'] : (isset($row['sesi']) ? (string) $row['sesi'] : null),
                     'max_pax' => isset($row['max_pax']) ? max(1, (int) $row['max_pax']) : 2,
                     'notes' => isset($row['notes']) ? (string) $row['notes'] : null,
                     'token' => Str::random(64),
@@ -396,6 +438,8 @@ class GuestController extends Controller
             // CSV parsing
             if (($handle = fopen($file->getRealPath(), 'r')) !== false) {
                 $header = fgetcsv($handle); // Skip header row
+                $hasSesiCol = count($header ?: []) >= 6 || stripos($header[4] ?? '', 'sesi') !== false;
+
                 while (($data = fgetcsv($handle, 1000, ',')) !== false) {
                     if (empty($data[0])) continue;
 
@@ -403,12 +447,20 @@ class GuestController extends Controller
                     $phone = !empty($data[1]) ? trim($data[1]) : null;
                     $group = !empty($data[2]) ? trim($data[2]) : null;
                     $maxPax = !empty($data[3]) && is_numeric($data[3]) ? max(1, (int) $data[3]) : 2;
-                    $notes = !empty($data[4]) ? trim($data[4]) : null;
+
+                    if ($hasSesiCol) {
+                        $session = !empty($data[4]) ? trim($data[4]) : null;
+                        $notes = !empty($data[5]) ? trim($data[5]) : null;
+                    } else {
+                        $session = null;
+                        $notes = !empty($data[4]) ? trim($data[4]) : null;
+                    }
 
                     $wedding->guests()->create([
                         'name' => $name,
                         'phone_number' => $phone,
                         'group_name' => $group,
+                        'session_name' => $session,
                         'max_pax' => $maxPax,
                         'notes' => $notes,
                         'token' => Str::random(64),
@@ -443,10 +495,10 @@ class GuestController extends Controller
             $callback = function () {
                 $file = fopen('php://output', 'w');
                 fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-                fputcsv($file, ['Nama Tamu (Wajib)', 'Nomor WhatsApp', 'Kategori / Grup', 'Maks Pax', 'Catatan']);
-                fputcsv($file, ['Bpk. H. Rahmat & Keluarga', '08123456789', 'Keluarga Besar', 2, 'VIP Depan']);
-                fputcsv($file, ['Sarah & Pasangan', '08987654321', 'Teman Kuliah', 2, 'Teman Kampus']);
-                fputcsv($file, ['dr. Ahmad Santoso', '08112233445', 'Rekan Kerja', 1, 'Kolega Kantor']);
+                fputcsv($file, ['Nama Tamu (Wajib)', 'Nomor WhatsApp', 'Kategori / Grup', 'Maks Pax', 'Sesi', 'Catatan']);
+                fputcsv($file, ['Keluarga', '', 'K. Inti (Hakim)', 6, 'Sesi Akad (08.00-10.00)', '']);
+                fputcsv($file, ['Nenek, Om amien n keluarga', '', 'Keluarga Nenek Klender (Hakim)', 5, 'Sesi Akad (08.00-10.00)', 'VIP']);
+                fputcsv($file, ['Om adhi n keluarga', '', 'Keluarga Nenek Klender (Hakim)', 4, 'Sesi Akad (08.00-10.00)', '']);
                 fclose($file);
             };
 
@@ -457,13 +509,14 @@ class GuestController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Template Tamu');
 
-        // Headers
+        // Headers: 6 columns
         $headers = [
             'A1' => 'Nama Tamu (Wajib)',
             'B1' => 'Nomor WhatsApp',
             'C1' => 'Kategori / Grup',
             'D1' => 'Maks Pax',
-            'E1' => 'Catatan',
+            'E1' => 'Sesi',
+            'F1' => 'Catatan',
         ];
 
         foreach ($headers as $cell => $val) {
@@ -492,14 +545,14 @@ class GuestController extends Controller
                 ],
             ],
         ];
-        $sheet->getStyle('A1:E1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
         $sheet->getRowDimension(1)->setRowHeight(28);
 
-        // Sample data
+        // Sample data from user specification
         $samples = [
-            ['Bpk. H. Rahmat & Keluarga', '08123456789', 'Keluarga Besar', 2, 'VIP Depan'],
-            ['Sarah & Pasangan', '08987654321', 'Teman Kuliah', 2, 'Teman Kampus'],
-            ['dr. Ahmad Santoso', '08112233445', 'Rekan Kerja', 1, 'Kolega Kantor'],
+            ['Keluarga', '', 'K. Inti (Hakim)', 6, 'Sesi Akad (08.00-10.00)', ''],
+            ['Nenek, Om amien n keluarga', '', 'Keluarga Nenek Klender (Hakim)', 5, 'Sesi Akad (08.00-10.00)', 'VIP'],
+            ['Om adhi n keluarga', '', 'Keluarga Nenek Klender (Hakim)', 4, 'Sesi Akad (08.00-10.00)', ''],
         ];
 
         $rowIdx = 2;
@@ -509,8 +562,9 @@ class GuestController extends Controller
             $sheet->setCellValueExplicit("C{$rowIdx}", $sample[2], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue("D{$rowIdx}", $sample[3]);
             $sheet->setCellValueExplicit("E{$rowIdx}", $sample[4], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit("F{$rowIdx}", $sample[5], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
-            $sheet->getStyle("A{$rowIdx}:E{$rowIdx}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN)->getColor()->setARGB('FFE2E8F0');
+            $sheet->getStyle("A{$rowIdx}:F{$rowIdx}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN)->getColor()->setARGB('FFE2E8F0');
             $rowIdx++;
         }
 
@@ -518,7 +572,7 @@ class GuestController extends Controller
         $sheet->getStyle('B2:B1000')->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
 
         // Auto-fit columns
-        foreach (range('A', 'E') as $col) {
+        foreach (range('A', 'F') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -565,7 +619,8 @@ class GuestController extends Controller
                 'Nama Tamu',
                 'Nomor WhatsApp',
                 'Kategori / Grup',
-                'Maksimal Pax',
+                'Maks Pax',
+                'Sesi Acara',
                 'Status Kirim Undangan',
                 'Status RSVP',
                 'Jumlah Pax Hadir',
@@ -592,6 +647,7 @@ class GuestController extends Controller
                     $guest->phone_number ?? '-',
                     $guest->group_name ?? '-',
                     $guest->max_pax,
+                    $guest->session_name ?? '-',
                     $guest->is_invitation_sent ? 'Terkirim' : 'Belum Dikirim',
                     $statusRsvp,
                     $guest->rsvp?->attendance_status === 'attending' ? ($guest->rsvp?->pax_count ?? 1) : 0,

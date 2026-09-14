@@ -32,6 +32,7 @@ class CreateGuestRequest extends FormRequest
             'name'          => ['required', 'string', 'max:255'],
             'phone_number'  => ['nullable', 'string', 'max:20'],
             'group_name'    => ['nullable', 'string', 'max:100'],
+            'session_name'  => ['nullable', 'string', 'max:150'],
             'max_pax'       => ['required', 'integer', 'min:1'],
             'notes'         => ['nullable', 'string', 'max:1000'],
         ];

@@ -281,4 +281,105 @@ class GuestBulkActionsTest extends TestCase
             unlink($tempPath);
         }
     }
+
+    public function test_tenant_can_bulk_edit_guest_sessions(): void
+    {
+        $tenant = User::factory()->create(['role' => 'tenant']);
+        $wedding = $this->createWedding($tenant);
+
+        $guest1 = Guest::create([
+            'wedding_id' => $wedding->id,
+            'name' => 'Tamu S1',
+            'session_name' => 'Sesi Akad',
+            'token' => 'tok-s1',
+        ]);
+        $guest2 = Guest::create([
+            'wedding_id' => $wedding->id,
+            'name' => 'Tamu S2',
+            'session_name' => null,
+            'token' => 'tok-s2',
+        ]);
+
+        $response = $this->actingAs($tenant)
+            ->post("/weddings/{$wedding->id}/guests/bulk-edit", [
+                'guest_ids' => [$guest1->id, $guest2->id],
+                'apply_session_name' => true,
+                'session_name' => 'Sesi Resepsi (11.00-13.00)',
+            ]);
+
+        $response->assertSessionHas('success');
+
+        $this->assertEquals('Sesi Resepsi (11.00-13.00)', $guest1->fresh()->session_name);
+        $this->assertEquals('Sesi Resepsi (11.00-13.00)', $guest2->fresh()->session_name);
+    }
+
+    public function test_tenant_can_bulk_import_from_excel_with_sessions(): void
+    {
+        $tenant = User::factory()->create(['role' => 'tenant']);
+        $wedding = $this->createWedding($tenant);
+
+        // Generate a 6-column XLSX matching user template
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A1', 'Nama Tamu (Wajib)');
+        $sheet->setCellValue('B1', 'Nomor WhatsApp');
+        $sheet->setCellValue('C1', 'Kategori / Grup');
+        $sheet->setCellValue('D1', 'Maks Pax');
+        $sheet->setCellValue('E1', 'Sesi');
+        $sheet->setCellValue('F1', 'Catatan');
+
+        $sheet->setCellValue('A2', 'Keluarga');
+        $sheet->setCellValue('B2', '');
+        $sheet->setCellValue('C2', 'K. Inti (Hakim)');
+        $sheet->setCellValue('D2', 6);
+        $sheet->setCellValue('E2', 'Sesi Akad (08.00-10.00)');
+        $sheet->setCellValue('F2', '');
+
+        $sheet->setCellValue('A3', 'Nenek, Om amien n keluarga');
+        $sheet->setCellValue('B3', '08123456789');
+        $sheet->setCellValue('C3', 'Keluarga Nenek Klender (Hakim)');
+        $sheet->setCellValue('D3', 5);
+        $sheet->setCellValue('E3', 'Sesi Resepsi (11.00-13.00)');
+        $sheet->setCellValue('F3', 'VIP');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'test_excel_sessions_') . '.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        $uploadedFile = new \Illuminate\Http\UploadedFile(
+            $tempPath,
+            'template-tamu-walimyuk(1).xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($tenant)->post("/weddings/{$wedding->id}/guests/import", [
+            'file' => $uploadedFile,
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('guests', [
+            'wedding_id' => $wedding->id,
+            'name' => 'Keluarga',
+            'group_name' => 'K. Inti (Hakim)',
+            'max_pax' => 6,
+            'session_name' => 'Sesi Akad (08.00-10.00)',
+        ]);
+
+        $this->assertDatabaseHas('guests', [
+            'wedding_id' => $wedding->id,
+            'name' => 'Nenek, Om amien n keluarga',
+            'phone_number' => '08123456789',
+            'group_name' => 'Keluarga Nenek Klender (Hakim)',
+            'max_pax' => 5,
+            'session_name' => 'Sesi Resepsi (11.00-13.00)',
+            'notes' => 'VIP',
+        ]);
+
+        if (file_exists($tempPath)) {
+            unlink($tempPath);
+        }
+    }
 }

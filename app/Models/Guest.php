@@ -19,6 +19,7 @@ class Guest extends Model
         'name',
         'phone_number',
         'group_name',
+        'session_name',
         'max_pax',
         'token',
         'short_code',

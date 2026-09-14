@@ -10,6 +10,7 @@ const props = defineProps({
   selectedGuests: { type: Array, default: () => [] },
   weddingId: { type: [Number, String], required: true },
   availableGroups: { type: Array, default: () => [] },
+  availableSessions: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['update:open', 'success'])
@@ -21,6 +22,11 @@ const applyGroup = ref(false)
 const groupMode = ref('existing') // 'existing' | 'new' | 'clear'
 const existingGroup = ref('')
 const newGroup = ref('')
+
+const applySession = ref(false)
+const sessionMode = ref('existing') // 'existing' | 'new' | 'clear'
+const existingSession = ref('')
+const newSession = ref('')
 
 const applyMaxPax = ref(false)
 const maxPax = ref(2)
@@ -39,6 +45,12 @@ watch(
       groupMode.value = props.availableGroups.length ? 'existing' : 'new'
       existingGroup.value = props.availableGroups[0] || ''
       newGroup.value = ''
+
+      applySession.value = false
+      sessionMode.value = props.availableSessions.length ? 'existing' : 'new'
+      existingSession.value = props.availableSessions[0] || ''
+      newSession.value = ''
+
       applyMaxPax.value = false
       maxPax.value = 2
       applyStatusKirim.value = false
@@ -54,7 +66,7 @@ function close() {
 }
 
 function submit() {
-  if (!applyGroup.value && !applyMaxPax.value && !applyStatusKirim.value && !applyNotes.value) {
+  if (!applyGroup.value && !applySession.value && !applyMaxPax.value && !applyStatusKirim.value && !applyNotes.value) {
     return
   }
 
@@ -71,10 +83,23 @@ function submit() {
     }
   }
 
+  let resolvedSession = ''
+  if (applySession.value) {
+    if (sessionMode.value === 'existing') {
+      resolvedSession = existingSession.value
+    } else if (sessionMode.value === 'new') {
+      resolvedSession = newSession.value.trim()
+    } else if (sessionMode.value === 'clear') {
+      resolvedSession = ''
+    }
+  }
+
   const payload = {
     guest_ids: props.selectedGuests.map(g => g.id),
     apply_group_name: applyGroup.value,
     group_name: resolvedGroup,
+    apply_session_name: applySession.value,
+    session_name: resolvedSession,
     apply_max_pax: applyMaxPax.value,
     max_pax: maxPax.value,
     apply_is_invitation_sent: applyStatusKirim.value,
@@ -210,7 +235,56 @@ function submit() {
               </div>
             </div>
 
-            <!-- 2. Kuota Maksimal Pax -->
+            <!-- 2. Sesi Acara -->
+            <div class="rounded-xl border border-slate-200 p-3.5 transition" :class="{ 'bg-emerald-50/40 border-emerald-300': applySession }">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  v-model="applySession"
+                  class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                />
+                <span class="text-xs font-semibold text-slate-800">Ubah Sesi Acara Undangan</span>
+              </label>
+
+              <div v-if="applySession" class="mt-3 space-y-2 pl-6 pt-1">
+                <div class="flex flex-wrap gap-3 text-xs text-slate-700">
+                  <label v-if="availableSessions.length" class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="radio" v-model="sessionMode" value="existing" class="text-emerald-600" />
+                    Pilih yang ada
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="radio" v-model="sessionMode" value="new" class="text-emerald-600" />
+                    Buat Baru
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer text-rose-600">
+                    <input type="radio" v-model="sessionMode" value="clear" class="text-rose-600" />
+                    Kosongkan Sesi
+                  </label>
+                </div>
+
+                <div v-if="sessionMode === 'existing' && availableSessions.length" class="mt-2">
+                  <select
+                    v-model="existingSession"
+                    class="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                  >
+                    <option v-for="ses in availableSessions" :key="ses" :value="ses">
+                      {{ ses }}
+                    </option>
+                  </select>
+                </div>
+
+                <div v-else-if="sessionMode === 'new'" class="mt-2">
+                  <Input
+                    v-model="newSession"
+                    placeholder="Contoh: Sesi Akad (08.00-10.00), Sesi Resepsi..."
+                    class="text-xs"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Kuota Maksimal Pax -->
             <div class="rounded-xl border border-slate-200 p-3.5 transition" :class="{ 'bg-emerald-50/40 border-emerald-300': applyMaxPax }">
               <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input
@@ -298,7 +372,7 @@ function submit() {
               </Button>
               <Button
                 type="submit"
-                :disabled="isSubmitting || (!applyGroup && !applyMaxPax && !applyStatusKirim && !applyNotes)"
+                :disabled="isSubmitting || (!applyGroup && !applySession && !applyMaxPax && !applyStatusKirim && !applyNotes)"
                 class="rounded-xl bg-emerald-700 px-4 text-xs font-semibold text-white hover:bg-emerald-800 shadow-sm"
               >
                 <svg

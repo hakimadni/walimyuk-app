@@ -160,6 +160,16 @@ const guestCardBgStyle = computed(() => {
           {{ guest?.name || 'Tamu Undangan' }}
         </p>
 
+        <!-- Sesi & Grup jika ada -->
+        <div v-if="guest?.session_name || guest?.group_name" class="mt-1 flex flex-wrap items-center justify-center gap-1">
+          <span v-if="guest?.group_name" class="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-medium" :style="{ color: palette.text }">
+            {{ guest.group_name }}
+          </span>
+          <span v-if="guest?.session_name" class="rounded-full bg-amber-400/20 border border-amber-300/40 px-2 py-0.5 text-[9px] font-semibold text-amber-200">
+            🕒 {{ guest.session_name }}
+          </span>
+        </div>
+
         <!-- Tanggal & Hashtag di dalam card nama undangan -->
         <div class="mt-2 pt-1.5 border-t border-white/15">
           <p class="text-[11px] sm:text-xs font-semibold tracking-wide" :style="{ color: palette.text, ...textEffectStyle }">

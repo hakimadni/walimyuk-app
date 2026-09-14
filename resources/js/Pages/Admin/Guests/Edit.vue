@@ -15,6 +15,7 @@ const form = useForm({
   name: props.guest.name || '',
   phone_number: props.guest.phone_number || '',
   group_name: props.guest.group_name || '',
+  session_name: props.guest.session_name || '',
   max_pax: props.guest.max_pax || 1,
   notes: props.guest.notes || '',
 })
@@ -85,6 +86,18 @@ function submit() {
                   placeholder="Contoh: Keluarga Pria, Teman SMA, VIP"
                 />
                 <p v-if="form.errors.group_name" class="text-xs text-rose-500">{{ form.errors.group_name }}</p>
+              </div>
+
+              <!-- Sesi Acara -->
+              <div class="space-y-1.5">
+                <Label for="session_name" class="font-semibold text-slate-700">Sesi Acara</Label>
+                <Input
+                  id="session_name"
+                  v-model="form.session_name"
+                  type="text"
+                  placeholder="Contoh: Sesi Akad (08.00-10.00) atau Sesi Resepsi (11.00-13.00)"
+                />
+                <p v-if="form.errors.session_name" class="text-xs text-rose-500">{{ form.errors.session_name }}</p>
               </div>
 
               <!-- Max Pax -->

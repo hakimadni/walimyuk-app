@@ -14,6 +14,7 @@ const props = defineProps({
   wedding: { type: Object, required: true },
   guests: { type: [Object, Array], default: () => [] },
   availableGroups: { type: Array, default: () => [] },
+  availableSessions: { type: Array, default: () => [] },
   stats: { type: Object, default: () => null },
   filters: { type: Object, default: () => ({}) },
 })
@@ -31,6 +32,7 @@ const searchQuery = ref(props.filters?.search || '')
 const filterStatus = ref(props.filters?.status || 'all')
 const filterSent = ref(props.filters?.sent || 'all')
 const filterGroup = ref(props.filters?.group || 'all')
+const filterSession = ref(props.filters?.session || 'all')
 
 const copiedId = ref(null)
 const isImportModalOpen = ref(false)
@@ -52,6 +54,17 @@ const groupOptions = computed(() => {
   return Array.from(groups).sort()
 })
 
+const sessionOptions = computed(() => {
+  if (props.availableSessions && props.availableSessions.length) {
+    return props.availableSessions
+  }
+  const sessions = new Set()
+  guestList.value.forEach(g => {
+    if (g.session_name) sessions.add(g.session_name)
+  })
+  return Array.from(sessions).sort()
+})
+
 const filteredGuests = computed(() => {
   return guestList.value.filter(g => {
     // Search
@@ -60,8 +73,9 @@ const filteredGuests = computed(() => {
       const matchName = (g.name || '').toLowerCase().includes(q)
       const matchPhone = (g.phone_number || '').toLowerCase().includes(q)
       const matchGroup = (g.group_name || '').toLowerCase().includes(q)
+      const matchSession = (g.session_name || '').toLowerCase().includes(q)
       const matchNotes = (g.notes || '').toLowerCase().includes(q)
-      if (!matchName && !matchPhone && !matchGroup && !matchNotes) return false
+      if (!matchName && !matchPhone && !matchGroup && !matchSession && !matchNotes) return false
     }
 
     // Filter Group
@@ -69,6 +83,15 @@ const filteredGuests = computed(() => {
       if (filterGroup.value === '_none_') {
         if (g.group_name && g.group_name.trim() !== '') return false
       } else if (g.group_name !== filterGroup.value) {
+        return false
+      }
+    }
+
+    // Filter Session
+    if (filterSession.value !== 'all') {
+      if (filterSession.value === '_none_') {
+        if (g.session_name && g.session_name.trim() !== '') return false
+      } else if (g.session_name !== filterSession.value) {
         return false
       }
     }
@@ -90,7 +113,7 @@ const filteredGuests = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-  return searchQuery.value.trim() !== '' || filterStatus.value !== 'all' || filterSent.value !== 'all' || filterGroup.value !== 'all'
+  return searchQuery.value.trim() !== '' || filterStatus.value !== 'all' || filterSent.value !== 'all' || filterGroup.value !== 'all' || filterSession.value !== 'all'
 })
 
 function clearFilters() {
@@ -98,6 +121,7 @@ function clearFilters() {
   filterStatus.value = 'all'
   filterSent.value = 'all'
   filterGroup.value = 'all'
+  filterSession.value = 'all'
 }
 
 function filterByStat(status) {
@@ -175,10 +199,12 @@ function copyPersonalLink(guest) {
 function openWhatsApp(guest) {
   const url = getPersonalLink(guest)
   const couple = props.wedding.cover_subtitle || props.wedding.cover_title || 'Pernikahan Kami'
+  const sessionInfo = guest.session_name ? `\n*Sesi / Waktu Acara:*\n${guest.session_name}\n` : ''
   const text = encodeURIComponent(
     `Kepada Yth. *${guest.name}*,\n\n` +
     `Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n\n` +
-    `*${couple}*\n\n` +
+    `*${couple}*\n` +
+    sessionInfo + `\n` +
     `Informasi lengkap & konfirmasi kehadiran (RSVP) dapat diakses melalui tautan undangan personal berikut:\n` +
     `${url}\n\n` +
     `Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\n` +
@@ -440,6 +466,18 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                 <option value="_none_">Tanpa Kategori</option>
               </select>
 
+              <!-- Session Filter -->
+              <select
+                v-model="filterSession"
+                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">Semua Sesi Acara</option>
+                <option v-for="session in sessionOptions" :key="session" :value="session">
+                  {{ session }}
+                </option>
+                <option value="_none_">Tanpa Sesi</option>
+              </select>
+
               <!-- RSVP Status Filter -->
               <select
                 v-model="filterStatus"
@@ -533,7 +571,10 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                         <Link :href="`/weddings/${wedding.id}/guests/${guest.id}`" class="font-bold text-slate-900 hover:text-emerald-700">
                           {{ guest.name }}
                         </Link>
-                        <div class="flex items-center gap-1.5 mt-0.5">
+                        <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          <span v-if="guest.session_name" class="rounded bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 flex items-center gap-1">
+                            <span>🕒</span> {{ guest.session_name }}
+                          </span>
                           <span v-if="guest.group_name" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                             {{ guest.group_name }}
                           </span>
@@ -739,6 +780,7 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
       :selected-guests="selectedGuests"
       :wedding-id="wedding.id"
       :available-groups="groupOptions"
+      :available-sessions="sessionOptions"
       @success="selectedGuestIds = []"
     />
 
@@ -748,6 +790,7 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
       :guest="editingGuest"
       :wedding-id="wedding.id"
       :available-groups="groupOptions"
+      :available-sessions="sessionOptions"
     />
 
     <!-- Modal Impor Tamu Excel / CSV -->
@@ -837,6 +880,8 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
             <p>2. <strong>Nomor WhatsApp:</strong> Nomor HP aktif (contoh: <code>08123456789</code>).</p>
             <p>3. <strong>Kategori / Grup:</strong> Contoh: <code>Keluarga</code>, <code>VIP</code>, <code>Teman Kantor</code>.</p>
             <p>4. <strong>Maks Pax:</strong> Jumlah kuota orang (default <code>2</code>).</p>
+            <p>5. <strong>Sesi:</strong> Sesi atau jam kedatangan (contoh: <code>Sesi Akad (08.00-10.00)</code> atau <code>Sesi Resepsi</code>).</p>
+            <p>6. <strong>Catatan:</strong> Catatan khusus/VIP/meja (opsional).</p>
           </div>
 
           <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">

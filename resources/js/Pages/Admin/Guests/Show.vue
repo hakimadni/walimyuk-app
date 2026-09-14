@@ -36,10 +36,12 @@ function copyPersonalLink() {
 function openWhatsApp() {
   const url = getPersonalLink()
   const couple = props.wedding.cover_subtitle || props.wedding.cover_title || 'Pernikahan Kami'
+  const sessionInfo = props.guest.session_name ? `\n*Sesi / Waktu Acara:*\n${props.guest.session_name}\n` : ''
   const text = encodeURIComponent(
     `Kepada Yth. *${props.guest.name}*,\n\n` +
     `Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n\n` +
-    `*${couple}*\n\n` +
+    `*${couple}*\n` +
+    sessionInfo + `\n` +
     `Informasi lengkap & konfirmasi kehadiran (RSVP) dapat diakses melalui tautan undangan personal berikut:\n` +
     `${url}\n\n` +
     `Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\n` +
@@ -128,6 +130,10 @@ function markSent() {
               <div class="flex justify-between border-b border-slate-100 pb-2">
                 <span class="text-slate-400">Grup / Kategori</span>
                 <span class="font-semibold text-slate-900">{{ guest.group_name || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-slate-100 pb-2">
+                <span class="text-slate-400">Sesi Acara</span>
+                <span class="font-semibold text-slate-900">{{ guest.session_name || '-' }}</span>
               </div>
               <div class="flex justify-between border-b border-slate-100 pb-2">
                 <span class="text-slate-400">No. WhatsApp</span>
