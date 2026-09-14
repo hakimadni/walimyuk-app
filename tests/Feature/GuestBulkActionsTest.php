@@ -382,4 +382,34 @@ class GuestBulkActionsTest extends TestCase
             unlink($tempPath);
         }
     }
+
+    public function test_tenant_can_update_single_guest_session(): void
+    {
+        $tenant = User::factory()->create(['role' => 'tenant']);
+        $wedding = $this->createWedding($tenant);
+
+        $guest = Guest::create([
+            'wedding_id' => $wedding->id,
+            'name' => 'Tamu Khusus',
+            'session_name' => null,
+            'token' => 'tok-khusus',
+        ]);
+
+        $response = $this->actingAs($tenant)
+            ->patch("/weddings/{$wedding->id}/guests/{$guest->id}/session", [
+                'session_name' => 'Sesi Akad (08.00-10.00)',
+            ]);
+
+        $response->assertSessionHas('success');
+        $this->assertEquals('Sesi Akad (08.00-10.00)', $guest->fresh()->session_name);
+
+        // Can clear session
+        $clearResponse = $this->actingAs($tenant)
+            ->patch("/weddings/{$wedding->id}/guests/{$guest->id}/session", [
+                'session_name' => '',
+            ]);
+
+        $clearResponse->assertSessionHas('success');
+        $this->assertNull($guest->fresh()->session_name);
+    }
 }

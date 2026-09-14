@@ -245,6 +245,27 @@ class GuestController extends Controller
     }
 
     /**
+     * Update only the guest's session name.
+     */
+    public function updateSession(Request $request, Wedding $wedding, Guest $guest): RedirectResponse
+    {
+        $this->authorizeWedding($request, $wedding);
+        $this->authorizeGuest($wedding, $guest);
+
+        $validated = $request->validate([
+            'session_name' => ['nullable', 'string', 'max:150'],
+        ]);
+
+        $sessionName = !empty($validated['session_name']) ? trim($validated['session_name']) : null;
+        $guest->update([
+            'session_name' => $sessionName,
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Sesi untuk {$guest->name} berhasil diperbarui.");
+    }
+
+    /**
      * Bulk delete selected guests.
      */
     public function bulkDelete(Request $request, Wedding $wedding): RedirectResponse

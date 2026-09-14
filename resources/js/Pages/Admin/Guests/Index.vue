@@ -9,6 +9,7 @@ import { useConfirm } from '@/Composables/useConfirm'
 import { useToast } from '@/Composables/useToast'
 import BulkEditModal from '@/Components/Guests/BulkEditModal.vue'
 import QuickGuestModal from '@/Components/Guests/QuickGuestModal.vue'
+import GuestSessionSelect from '@/Components/Guests/GuestSessionSelect.vue'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -54,16 +55,21 @@ const groupOptions = computed(() => {
   return Array.from(groups).sort()
 })
 
+const extraSessions = ref([])
+
 const sessionOptions = computed(() => {
-  if (props.availableSessions && props.availableSessions.length) {
-    return props.availableSessions
-  }
-  const sessions = new Set()
+  const set = new Set([...props.availableSessions, ...extraSessions.value])
   guestList.value.forEach(g => {
-    if (g.session_name) sessions.add(g.session_name)
+    if (g.session_name) set.add(g.session_name)
   })
-  return Array.from(sessions).sort()
+  return Array.from(set).filter(Boolean).sort()
 })
+
+function handleNewSessionAdded(newSession) {
+  if (newSession && !extraSessions.value.includes(newSession)) {
+    extraSessions.value.push(newSession)
+  }
+}
 
 const filteredGuests = computed(() => {
   return guestList.value.filter(g => {
@@ -541,6 +547,7 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                       />
                     </TableHead>
                     <TableHead class="font-semibold text-slate-700">Nama &amp; Grup</TableHead>
+                    <TableHead class="font-semibold text-slate-700">Sesi Undangan</TableHead>
                     <TableHead class="font-semibold text-slate-700">Kontak</TableHead>
                     <TableHead class="font-semibold text-slate-700">Status Undangan</TableHead>
                     <TableHead class="font-semibold text-slate-700">Konfirmasi Kehadiran (RSVP)</TableHead>
@@ -571,10 +578,7 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                         <Link :href="`/weddings/${wedding.id}/guests/${guest.id}`" class="font-bold text-slate-900 hover:text-emerald-700">
                           {{ guest.name }}
                         </Link>
-                        <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
-                          <span v-if="guest.session_name" class="rounded bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 flex items-center gap-1">
-                            <span>🕒</span> {{ guest.session_name }}
-                          </span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
                           <span v-if="guest.group_name" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                             {{ guest.group_name }}
                           </span>
@@ -583,6 +587,16 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                           </span>
                         </div>
                       </div>
+                    </TableCell>
+
+                    <!-- Sesi Undangan Dropdown (Select2 Style) -->
+                    <TableCell>
+                      <GuestSessionSelect
+                        :guest="guest"
+                        :wedding-id="wedding.id"
+                        :available-sessions="sessionOptions"
+                        @new-session-added="handleNewSessionAdded"
+                      />
                     </TableCell>
 
                     <!-- Contact -->
