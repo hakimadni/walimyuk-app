@@ -118,6 +118,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('dashboard.weddings.guests.mark-sent');
         Route::patch('guests/{guest}/session', [GuestController::class, 'updateSession'])
             ->name('dashboard.weddings.guests.update-session');
+        Route::patch('guests/{guest}/physical', [GuestController::class, 'updatePhysical'])
+            ->name('dashboard.weddings.guests.update-physical');
         Route::resource('guests', GuestController::class)
             ->names('dashboard.weddings.guests');
 

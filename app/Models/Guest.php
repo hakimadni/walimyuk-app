@@ -25,6 +25,7 @@ class Guest extends Model
         'short_code',
         'slug',
         'is_invitation_sent',
+        'is_physical_invitation',
         'sent_at',
         'notes',
     ];
@@ -53,6 +54,7 @@ class Guest extends Model
     protected $casts = [
         'max_pax' => 'integer',
         'is_invitation_sent' => 'boolean',
+        'is_physical_invitation' => 'boolean',
         'sent_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];

@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link, router, useForm } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,7 @@ const guestList = computed(() => {
 const searchQuery = ref(props.filters?.search || '')
 const filterStatus = ref(props.filters?.status || 'all')
 const filterSent = ref(props.filters?.sent || 'all')
+const filterPhysical = ref(props.filters?.physical || 'all')
 const filterGroup = ref(props.filters?.group || 'all')
 const filterSession = ref(props.filters?.session || 'all')
 
@@ -114,20 +115,53 @@ const filteredGuests = computed(() => {
     if (filterSent.value === 'sent' && !g.is_invitation_sent) return false
     if (filterSent.value === 'unsent' && g.is_invitation_sent) return false
 
+    // Filter Physical
+    if (filterPhysical.value !== 'all') {
+      if (filterPhysical.value === 'physical' && !g.is_physical_invitation) return false
+      if (filterPhysical.value === 'digital' && g.is_physical_invitation) return false
+    }
+
     return true
   })
 })
 
 const hasActiveFilters = computed(() => {
-  return searchQuery.value.trim() !== '' || filterStatus.value !== 'all' || filterSent.value !== 'all' || filterGroup.value !== 'all' || filterSession.value !== 'all'
+  return searchQuery.value.trim() !== '' || filterStatus.value !== 'all' || filterSent.value !== 'all' || filterPhysical.value !== 'all' || filterGroup.value !== 'all' || filterSession.value !== 'all'
 })
 
 function clearFilters() {
   searchQuery.value = ''
   filterStatus.value = 'all'
   filterSent.value = 'all'
+  filterPhysical.value = 'all'
   filterGroup.value = 'all'
   filterSession.value = 'all'
+}
+
+const togglingPhysicalId = ref(null)
+
+async function togglePhysical(guest) {
+  togglingPhysicalId.value = guest.id
+  const oldVal = guest.is_physical_invitation
+  const newVal = !oldVal
+  guest.is_physical_invitation = newVal
+
+  try {
+    await window.axios.patch(`/weddings/${props.wedding.id}/guests/${guest.id}/physical`, {
+      is_physical_invitation: newVal,
+    })
+    toast.success(
+      newVal
+        ? `Undangan fisik untuk "${guest.name}" diaktifkan.`
+        : `Undangan fisik untuk "${guest.name}" dinonaktifkan.`
+    )
+  } catch (err) {
+    guest.is_physical_invitation = oldVal
+    const msg = err.response?.data?.message || err.message || 'Terjadi kesalahan'
+    toast.error('Gagal memperbarui status undangan fisik: ' + msg)
+  } finally {
+    togglingPhysicalId.value = null
+  }
 }
 
 function filterByStat(status) {
@@ -138,25 +172,146 @@ function filterByStat(status) {
   }
 }
 
-// Selection helpers
+// Pagination State
+const getInitialPage = () => {
+  if (typeof window === 'undefined') return 1
+  const params = new URLSearchParams(window.location.search)
+  const p = parseInt(params.get('page'))
+  return !isNaN(p) && p > 0 ? p : 1
+}
+
+const getInitialPerPage = () => {
+  if (typeof window === 'undefined') return 25
+  const params = new URLSearchParams(window.location.search)
+  const pp = params.get('per_page')
+  if (pp === 'all') return 'all'
+  const n = parseInt(pp)
+  return [10, 25, 50, 100].includes(n) ? n : 25
+}
+
+const currentPage = ref(getInitialPage())
+const perPage = ref(getInitialPerPage())
+
+const totalFiltered = computed(() => filteredGuests.value.length)
+
+const totalPages = computed(() => {
+  if (perPage.value === 'all') return 1
+  return Math.max(1, Math.ceil(totalFiltered.value / Number(perPage.value)))
+})
+
+const paginatedGuests = computed(() => {
+  if (perPage.value === 'all') {
+    return filteredGuests.value
+  }
+  const size = Number(perPage.value)
+  const start = (currentPage.value - 1) * size
+  return filteredGuests.value.slice(start, start + size)
+})
+
+const paginationFrom = computed(() => {
+  if (totalFiltered.value === 0) return 0
+  if (perPage.value === 'all') return 1
+  return (currentPage.value - 1) * Number(perPage.value) + 1
+})
+
+const paginationTo = computed(() => {
+  if (totalFiltered.value === 0) return 0
+  if (perPage.value === 'all') return totalFiltered.value
+  return Math.min(currentPage.value * Number(perPage.value), totalFiltered.value)
+})
+
+function syncUrlParams() {
+  if (typeof window === 'undefined') return
+  const url = new URL(window.location.href)
+  if (currentPage.value > 1) {
+    url.searchParams.set('page', currentPage.value)
+  } else {
+    url.searchParams.delete('page')
+  }
+  if (perPage.value !== 25) {
+    url.searchParams.set('per_page', perPage.value)
+  } else {
+    url.searchParams.delete('per_page')
+  }
+  window.history.replaceState({}, '', url.toString())
+}
+
+watch([currentPage, perPage], () => {
+  syncUrlParams()
+})
+
+watch(totalPages, (newTotal) => {
+  if (currentPage.value > newTotal && newTotal > 0) {
+    currentPage.value = newTotal
+  }
+})
+
+// Reset to page 1 whenever filters change
+watch(
+  [searchQuery, filterStatus, filterSent, filterPhysical, filterGroup, filterSession],
+  () => {
+    currentPage.value = 1
+  }
+)
+
+function goToPage(page) {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+}
+
+// Generate smart pagination page numbers (e.g. [1, 2, 3, '...', 10])
+const visiblePageNumbers = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages = []
+  pages.push(1)
+
+  if (current > 3) {
+    pages.push('...')
+  }
+
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (current < total - 2) {
+    pages.push('...')
+  }
+
+  pages.push(total)
+  return pages
+})
+
+// Selection helpers (based on current page)
 const isAllSelected = computed(() => {
-  if (!filteredGuests.value.length) return false
-  return filteredGuests.value.every(g => selectedGuestIds.value.includes(g.id))
+  if (!paginatedGuests.value.length) return false
+  return paginatedGuests.value.every(g => selectedGuestIds.value.includes(g.id))
 })
 
 const isSomeSelected = computed(() => {
-  return filteredGuests.value.some(g => selectedGuestIds.value.includes(g.id)) && !isAllSelected.value
+  return paginatedGuests.value.some(g => selectedGuestIds.value.includes(g.id)) && !isAllSelected.value
 })
 
 function toggleSelectAll() {
+  const pageIds = paginatedGuests.value.map(g => g.id)
   if (isAllSelected.value) {
-    const visibleIds = new Set(filteredGuests.value.map(g => g.id))
-    selectedGuestIds.value = selectedGuestIds.value.filter(id => !visibleIds.has(id))
+    const pageIdSet = new Set(pageIds)
+    selectedGuestIds.value = selectedGuestIds.value.filter(id => !pageIdSet.has(id))
   } else {
-    const visibleIds = filteredGuests.value.map(g => g.id)
-    const set = new Set([...selectedGuestIds.value, ...visibleIds])
+    const set = new Set([...selectedGuestIds.value, ...pageIds])
     selectedGuestIds.value = Array.from(set)
   }
+}
+
+function selectAllFiltered() {
+  selectedGuestIds.value = filteredGuests.value.map(g => g.id)
 }
 
 function toggleGuest(id) {
@@ -172,15 +327,83 @@ const selectedGuests = computed(() => {
   return guestList.value.filter(g => selectedGuestIds.value.includes(g.id))
 })
 
-// Quick Modal Helpers
+// Quick Modal Helpers (Create new guest)
 function openCreateModal() {
   editingGuest.value = null
   isQuickModalOpen.value = true
 }
 
-function openEditModal(guest) {
-  editingGuest.value = guest
-  isQuickModalOpen.value = true
+// Inline Row Editing State & Methods
+const editingRowId = ref(null)
+const isSavingRow = ref(false)
+const rowForm = ref({
+  name: '',
+  phone_number: '',
+  group_name: '',
+  session_name: '',
+  max_pax: 1,
+  is_physical_invitation: false,
+  notes: '',
+})
+
+function startInlineEdit(guest) {
+  editingRowId.value = guest.id
+  rowForm.value = {
+    name: guest.name || '',
+    phone_number: guest.phone_number || '',
+    group_name: guest.group_name || '',
+    session_name: guest.session_name || '',
+    max_pax: guest.max_pax || 1,
+    is_physical_invitation: Boolean(guest.is_physical_invitation),
+    notes: guest.notes || '',
+  }
+}
+
+function cancelInlineEdit() {
+  editingRowId.value = null
+}
+
+async function saveInlineEdit(guest) {
+  if (!rowForm.value.name || !rowForm.value.name.trim()) {
+    toast.error('Nama tamu wajib diisi.')
+    return
+  }
+
+  isSavingRow.value = true
+  try {
+    const payload = {
+      name: rowForm.value.name.trim(),
+      phone_number: rowForm.value.phone_number?.trim() || null,
+      group_name: rowForm.value.group_name?.trim() || null,
+      session_name: rowForm.value.session_name?.trim() || null,
+      max_pax: Number(rowForm.value.max_pax) || 1,
+      is_physical_invitation: Boolean(rowForm.value.is_physical_invitation),
+      notes: rowForm.value.notes?.trim() || null,
+    }
+
+    await window.axios.put(`/weddings/${props.wedding.id}/guests/${guest.id}`, payload)
+
+    // Update guest in memory
+    guest.name = payload.name
+    guest.phone_number = payload.phone_number
+    guest.group_name = payload.group_name
+    guest.session_name = payload.session_name
+    guest.max_pax = payload.max_pax
+    guest.is_physical_invitation = payload.is_physical_invitation
+    guest.notes = payload.notes
+
+    if (payload.session_name && !extraSessions.value.includes(payload.session_name)) {
+      handleNewSessionAdded(payload.session_name)
+    }
+
+    toast.success(`Data tamu "${guest.name}" berhasil disimpan.`)
+    editingRowId.value = null
+  } catch (err) {
+    const msg = err.response?.data?.message || err.message || 'Terjadi kesalahan saat menyimpan data.'
+    toast.error('Gagal menyimpan data: ' + msg)
+  } finally {
+    isSavingRow.value = false
+  }
 }
 
 // Personal link & WhatsApp
@@ -223,10 +446,17 @@ function openWhatsApp(guest) {
 }
 
 // Single Actions
-function markSent(guest) {
-  router.post(`/weddings/${props.wedding.id}/guests/${guest.id}/mark-sent`, {}, {
-    preserveScroll: true,
-  })
+async function markSent(guest) {
+  const oldVal = guest.is_invitation_sent
+  guest.is_invitation_sent = true
+  try {
+    await window.axios.post(`/weddings/${props.wedding.id}/guests/${guest.id}/mark-sent`, {})
+    toast.success(`Undangan untuk "${guest.name}" ditandai sudah dikirim.`)
+  } catch (err) {
+    guest.is_invitation_sent = oldVal
+    const msg = err.response?.data?.message || err.message || 'Terjadi kesalahan'
+    toast.error('Gagal memperbarui status pengiriman: ' + msg)
+  }
 }
 
 async function deleteGuest(guest) {
@@ -240,6 +470,7 @@ async function deleteGuest(guest) {
   if (confirmed) {
     router.delete(`/weddings/${props.wedding.id}/guests/${guest.id}`, {
       preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         selectedGuestIds.value = selectedGuestIds.value.filter(id => id !== guest.id)
       },
@@ -267,6 +498,7 @@ async function handleBulkDelete() {
       guest_ids: selectedGuestIds.value,
     }, {
       preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         selectedGuestIds.value = []
       },
@@ -290,6 +522,7 @@ async function handleBulkMarkSent() {
       guest_ids: selectedGuestIds.value,
     }, {
       preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         selectedGuestIds.value = []
       },
@@ -324,9 +557,11 @@ function submitImport() {
 // Stats computed
 const totalGuests = computed(() => props.stats?.total ?? guestList.value.length)
 const totalSent = computed(() => props.stats?.sent ?? guestList.value.filter(g => g.is_invitation_sent).length)
+const totalPhysical = computed(() => props.stats?.total_physical ?? guestList.value.filter(g => g.is_physical_invitation).length)
 const totalAttending = computed(() => props.stats?.attending ?? guestList.value.filter(g => g.rsvp?.attendance_status === 'attending').length)
 const totalDeclined = computed(() => props.stats?.declined ?? guestList.value.filter(g => g.rsvp?.attendance_status === 'declined').length)
 const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList.value.reduce((acc, g) => acc + (g.rsvp?.attendance_status === 'attending' ? (g.rsvp?.pax_count || 1) : 0), 0))
+const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce((acc, g) => acc + (g.max_pax || 1), 0))
 </script>
 
 <template>
@@ -382,18 +617,30 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
     <div class="py-6">
       <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
         <!-- Quick Metric Stats with Interactive Click Filtering -->
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <!-- Total Tamu -->
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <!-- Total Undangan (Dulu Total Tamu) -->
           <button
             type="button"
             class="rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-emerald-300"
             :class="filterStatus === 'all' ? 'border-emerald-400 ring-2 ring-emerald-100' : 'border-slate-200'"
             @click="filterStatus = 'all'"
           >
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Tamu</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Undangan</p>
             <p class="font-serif text-2xl font-bold text-emerald-950 mt-1">{{ totalGuests }}</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">{{ totalSent }} terkirim</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">{{ totalSent }} terkirim • {{ totalPhysical }} fisik</p>
           </button>
+
+          <!-- Total Pax -->
+          <div
+            class="rounded-2xl border border-indigo-100 bg-white p-4 text-left shadow-sm hover:border-indigo-300 transition"
+          >
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Total Pax</p>
+              <span class="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700">Kuota</span>
+            </div>
+            <p class="font-serif text-2xl font-bold text-indigo-950 mt-1">{{ totalPax }}</p>
+            <p class="text-[11px] text-indigo-600/80 mt-0.5">{{ totalConfirmedPax }} Pax Hadir</p>
+          </div>
 
           <!-- Hadir -->
           <button
@@ -428,7 +675,7 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
           <!-- Belum RSVP -->
           <button
             type="button"
-            class="rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-amber-300"
+            class="rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-amber-300 col-span-2 sm:col-span-1"
             :class="filterStatus === 'pending' ? 'border-amber-500 ring-2 ring-amber-200 bg-amber-50/20' : 'border-slate-200'"
             @click="filterByStat('pending')"
           >
@@ -505,6 +752,16 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                 <option value="unsent">Belum Dikirim</option>
               </select>
 
+              <!-- Physical Invitation Filter -->
+              <select
+                v-model="filterPhysical"
+                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">Semua Tipe Undangan</option>
+                <option value="physical">💌 Undangan Fisik</option>
+                <option value="digital">🌐 Digital Saja</option>
+              </select>
+
               <!-- Reset filter button -->
               <button
                 v-if="hasActiveFilters"
@@ -525,45 +782,100 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
               <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 👥
               </div>
-              <p class="text-sm font-medium text-slate-700">Belum ada tamu ditemukan.</p>
+              <p class="text-sm font-medium text-slate-700">Belum ada undangan ditemukan.</p>
               <p class="mt-1 text-xs text-slate-400">
-                {{ hasActiveFilters ? 'Coba sesuaikan filter pencarian di atas.' : 'Klik "Tambah Tamu" atau "Impor CSV" untuk menambahkan data tamu undangan baru.' }}
+                {{ hasActiveFilters ? 'Coba sesuaikan filter pencarian di atas.' : 'Klik "Tambah Tamu" atau "Impor Excel / CSV" untuk menambahkan data tamu undangan baru.' }}
               </p>
             </div>
 
-            <div v-else class="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow class="bg-slate-50/50">
-                    <!-- Checkbox Master Column -->
-                    <TableHead class="w-10 px-3">
-                      <input
-                        type="checkbox"
-                        :checked="isAllSelected"
-                        :indeterminate.prop="isSomeSelected"
-                        @change="toggleSelectAll"
-                        class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                        title="Pilih Semua Tamu"
-                      />
-                    </TableHead>
-                    <TableHead class="font-semibold text-slate-700">Nama &amp; Grup</TableHead>
-                    <TableHead class="font-semibold text-slate-700">Sesi Undangan</TableHead>
-                    <TableHead class="font-semibold text-slate-700">Kontak</TableHead>
-                    <TableHead class="font-semibold text-slate-700">Status Undangan</TableHead>
-                    <TableHead class="font-semibold text-slate-700">Konfirmasi Kehadiran (RSVP)</TableHead>
-                    <TableHead class="font-semibold text-slate-700">Maks Pax</TableHead>
-                    <TableHead class="text-right font-semibold text-slate-700">Aksi &amp; Kirim</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow
-                    v-for="guest in filteredGuests"
-                    :key="guest.id"
-                    class="transition"
-                    :class="selectedGuestIds.includes(guest.id) ? 'bg-emerald-50/60 hover:bg-emerald-50/90' : 'hover:bg-slate-50/80'"
-                  >
-                    <!-- Row Checkbox -->
-                    <TableCell class="w-10 px-3">
+            <div v-else class="space-y-3">
+              <!-- Selection helper banner across pagination pages -->
+              <div
+                v-if="selectedGuestIds.length > 0 && selectedGuestIds.length < filteredGuests.length"
+                class="rounded-xl bg-emerald-50/90 px-3.5 py-2 text-xs text-emerald-900 border border-emerald-200 flex items-center justify-between"
+              >
+                <span>
+                  <strong>{{ selectedGuestIds.length }}</strong> undangan terpilih di halaman ini.
+                </span>
+                <button
+                  type="button"
+                  class="font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer"
+                  @click="selectAllFiltered"
+                >
+                  Pilih seluruh {{ filteredGuests.length }} undangan yang cocok
+                </button>
+              </div>
+              <div
+                v-else-if="selectedGuestIds.length > 0 && selectedGuestIds.length === filteredGuests.length && filteredGuests.length > paginatedGuests.length"
+                class="rounded-xl bg-emerald-50/90 px-3.5 py-2 text-xs text-emerald-900 border border-emerald-200 flex items-center justify-between"
+              >
+                <span>
+                  Seluruh <strong>{{ filteredGuests.length }}</strong> undangan telah dipilih.
+                </span>
+                <button
+                  type="button"
+                  class="font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer"
+                  @click="selectedGuestIds = []"
+                >
+                  Batalkan pilihan
+                </button>
+              </div>
+
+              <div>
+                <!-- Datalists for inline row editing -->
+                <datalist id="inline-group-options">
+                  <option v-for="g in groupOptions" :key="g" :value="g" />
+                </datalist>
+                <datalist id="inline-session-options">
+                  <option v-for="s in sessionOptions" :key="s" :value="s" />
+                </datalist>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow class="bg-slate-50/90">
+                      <!-- Checkbox Master Column (Frozen) -->
+                      <TableHead class="sticky left-0 z-20 w-[44px] min-w-[44px] max-w-[44px] px-3 bg-slate-50 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isAllSelected"
+                          :indeterminate.prop="isSomeSelected"
+                          @change="toggleSelectAll"
+                          class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          title="Pilih Semua di Halaman Ini"
+                        />
+                      </TableHead>
+
+                      <!-- Nama & Grup (Frozen) -->
+                      <TableHead class="sticky left-[44px] z-20 min-w-[220px] sm:min-w-[260px] bg-slate-50 font-semibold text-slate-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08),1px_0_0_0_#e2e8f0]">
+                        Nama &amp; Grup
+                      </TableHead>
+
+                      <TableHead class="min-w-[180px] font-semibold text-slate-700">Sesi Undangan</TableHead>
+                      <TableHead class="min-w-[130px] font-semibold text-slate-700 text-center">Undangan Fisik</TableHead>
+                      <TableHead class="min-w-[130px] font-semibold text-slate-700">Kontak</TableHead>
+                      <TableHead class="min-w-[120px] font-semibold text-slate-700">Status Undangan</TableHead>
+                      <TableHead class="min-w-[170px] font-semibold text-slate-700">Konfirmasi Kehadiran (RSVP)</TableHead>
+                      <TableHead class="min-w-[90px] font-semibold text-slate-700">Maks Pax</TableHead>
+                      <TableHead class="min-w-[190px] text-right font-semibold text-slate-700">Aksi &amp; Kirim</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow
+                      v-for="guest in paginatedGuests"
+                      :key="guest.id"
+                      class="group transition"
+                      :class="editingRowId === guest.id
+                        ? 'bg-amber-50/50 ring-2 ring-emerald-500/50 shadow-xs z-10'
+                        : (selectedGuestIds.includes(guest.id) ? 'bg-emerald-50/60 hover:bg-emerald-50/90' : 'hover:bg-slate-50/80')"
+                      @dblclick="startInlineEdit(guest)"
+                    >
+                    <!-- Row Checkbox (Frozen) -->
+                    <TableCell
+                      class="sticky left-0 z-10 w-[44px] min-w-[44px] max-w-[44px] px-3 text-center transition-colors"
+                      :class="editingRowId === guest.id
+                        ? 'bg-amber-50/80'
+                        : (selectedGuestIds.includes(guest.id) ? 'bg-emerald-50 group-hover:bg-emerald-100/70' : 'bg-white group-hover:bg-slate-50')"
+                    >
                       <input
                         type="checkbox"
                         :checked="selectedGuestIds.includes(guest.id)"
@@ -572,9 +884,50 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                       />
                     </TableCell>
 
-                    <!-- Name & Group -->
-                    <TableCell>
-                      <div>
+                    <!-- Name & Group (Frozen) -->
+                    <TableCell
+                      class="sticky left-[44px] z-10 min-w-[240px] sm:min-w-[280px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08),1px_0_0_0_#e2e8f0] transition-colors"
+                      :class="editingRowId === guest.id
+                        ? 'bg-amber-50/80'
+                        : (selectedGuestIds.includes(guest.id) ? 'bg-emerald-50 group-hover:bg-emerald-100/70' : 'bg-white group-hover:bg-slate-50')"
+                    >
+                      <!-- Inline Edit Inputs for Name, Group & Notes -->
+                      <div v-if="editingRowId === guest.id" class="space-y-1.5 py-1">
+                        <div>
+                          <input
+                            v-model="rowForm.name"
+                            type="text"
+                            placeholder="Nama Tamu (wajib)..."
+                            class="h-7 w-full rounded-md border border-slate-300 bg-white px-2 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                            required
+                            autofocus
+                            @keydown.enter.prevent="saveInlineEdit(guest)"
+                            @keydown.esc.prevent="cancelInlineEdit"
+                          />
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                          <input
+                            v-model="rowForm.group_name"
+                            type="text"
+                            list="inline-group-options"
+                            placeholder="Kategori / Grup..."
+                            class="h-6 w-1/2 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700 focus:border-emerald-500 focus:outline-none"
+                            @keydown.enter.prevent="saveInlineEdit(guest)"
+                            @keydown.esc.prevent="cancelInlineEdit"
+                          />
+                          <input
+                            v-model="rowForm.notes"
+                            type="text"
+                            placeholder="Catatan..."
+                            class="h-6 w-1/2 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-500 focus:border-emerald-500 focus:outline-none"
+                            @keydown.enter.prevent="saveInlineEdit(guest)"
+                            @keydown.esc.prevent="cancelInlineEdit"
+                          />
+                        </div>
+                      </div>
+
+                      <!-- Display Mode for Name, Group & Notes -->
+                      <div v-else>
                         <Link :href="`/weddings/${wedding.id}/guests/${guest.id}`" class="font-bold text-slate-900 hover:text-emerald-700">
                           {{ guest.name }}
                         </Link>
@@ -590,8 +943,20 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                     </TableCell>
 
                     <!-- Sesi Undangan Dropdown (Select2 Style) -->
-                    <TableCell>
+                    <TableCell class="min-w-[180px]">
+                      <div v-if="editingRowId === guest.id" class="py-1">
+                        <input
+                          v-model="rowForm.session_name"
+                          type="text"
+                          list="inline-session-options"
+                          placeholder="Pilih atau ketik sesi..."
+                          class="h-7 w-full rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                          @keydown.enter.prevent="saveInlineEdit(guest)"
+                          @keydown.esc.prevent="cancelInlineEdit"
+                        />
+                      </div>
                       <GuestSessionSelect
+                        v-else
                         :guest="guest"
                         :wedding-id="wedding.id"
                         :available-sessions="sessionOptions"
@@ -599,13 +964,58 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                       />
                     </TableCell>
 
+                    <!-- Undangan Fisik Toggle -->
+                    <TableCell class="min-w-[130px] text-center">
+                      <button
+                        v-if="editingRowId === guest.id"
+                        type="button"
+                        @click="rowForm.is_physical_invitation = !rowForm.is_physical_invitation"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                        :class="rowForm.is_physical_invitation
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200'"
+                        title="Klik untuk ubah jenis undangan fisik/digital"
+                      >
+                        <span>{{ rowForm.is_physical_invitation ? '💌' : '✉️' }}</span>
+                        <span>{{ rowForm.is_physical_invitation ? 'Fisik' : 'Digital' }}</span>
+                      </button>
+
+                      <button
+                        v-else
+                        type="button"
+                        :disabled="togglingPhysicalId === guest.id"
+                        @click="togglePhysical(guest)"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer disabled:opacity-50"
+                        :class="guest.is_physical_invitation
+                          ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 shadow-2xs'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border border-slate-200'"
+                        :title="guest.is_physical_invitation ? 'Klik untuk ubah jadi Digital' : 'Klik untuk tandai Undangan Fisik'"
+                      >
+                        <span v-if="togglingPhysicalId === guest.id" class="inline-block animate-spin text-[10px]">⏳</span>
+                        <span v-else>{{ guest.is_physical_invitation ? '💌' : '✉️' }}</span>
+                        <span>{{ guest.is_physical_invitation ? 'Fisik' : 'Digital' }}</span>
+                      </button>
+                    </TableCell>
+
                     <!-- Contact -->
-                    <TableCell class="text-xs text-slate-600 font-mono">
-                      {{ guest.phone_number || '-' }}
+                    <TableCell class="min-w-[130px]">
+                      <div v-if="editingRowId === guest.id" class="py-1">
+                        <input
+                          v-model="rowForm.phone_number"
+                          type="text"
+                          placeholder="08123456789"
+                          class="h-7 w-full rounded-md border border-slate-300 bg-white px-2 text-xs font-mono text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                          @keydown.enter.prevent="saveInlineEdit(guest)"
+                          @keydown.esc.prevent="cancelInlineEdit"
+                        />
+                      </div>
+                      <span v-else class="text-xs text-slate-600 font-mono">
+                        {{ guest.phone_number || '-' }}
+                      </span>
                     </TableCell>
 
                     <!-- Status Undangan (Sent) -->
-                    <TableCell>
+                    <TableCell class="min-w-[120px]">
                       <div class="flex items-center gap-1.5">
                         <span
                           class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
@@ -618,7 +1028,7 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                     </TableCell>
 
                     <!-- RSVP Status -->
-                    <TableCell>
+                    <TableCell class="min-w-[170px]">
                       <div v-if="guest.rsvp" class="space-y-0.5">
                         <span
                           class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
@@ -631,13 +1041,57 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                     </TableCell>
 
                     <!-- Max Pax -->
-                    <TableCell class="text-xs text-slate-700 font-medium">
-                      {{ guest.max_pax }} Pax
+                    <TableCell class="min-w-[90px]">
+                      <div v-if="editingRowId === guest.id" class="py-1">
+                        <input
+                          v-model.number="rowForm.max_pax"
+                          type="number"
+                          min="1"
+                          max="50"
+                          class="h-7 w-16 rounded-md border border-slate-300 bg-white px-1.5 text-center text-xs font-bold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                          @keydown.enter.prevent="saveInlineEdit(guest)"
+                          @keydown.esc.prevent="cancelInlineEdit"
+                        />
+                      </div>
+                      <span v-else class="text-xs text-slate-700 font-medium">
+                        {{ guest.max_pax }} Pax
+                      </span>
                     </TableCell>
 
                     <!-- Actions -->
-                    <TableCell class="text-right">
-                      <div class="flex items-center justify-end gap-1.5">
+                    <TableCell class="min-w-[190px] text-right">
+                      <!-- Inline Edit Buttons -->
+                      <div v-if="editingRowId === guest.id" class="flex items-center justify-end gap-1.5 py-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          :disabled="isSavingRow"
+                          class="h-7 rounded-lg bg-emerald-700 px-2.5 text-xs font-semibold text-white hover:bg-emerald-800 flex items-center gap-1 shadow-xs cursor-pointer"
+                          @click="saveInlineEdit(guest)"
+                          title="Simpan Perubahan (Enter)"
+                        >
+                          <svg v-if="isSavingRow" class="h-3 w-3 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                          </svg>
+                          <span v-else>✓</span>
+                          <span>Simpan</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          :disabled="isSavingRow"
+                          class="h-7 rounded-lg px-2 text-xs font-medium text-slate-600 hover:bg-slate-100 cursor-pointer"
+                          @click="cancelInlineEdit"
+                          title="Batal (Esc)"
+                        >
+                          <span>Batal</span>
+                        </Button>
+                      </div>
+
+                      <!-- Normal Action Buttons -->
+                      <div v-else class="flex items-center justify-end gap-1.5">
                         <!-- WhatsApp Share -->
                         <Button
                           type="button"
@@ -675,14 +1129,14 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                           ✓ Kirim
                         </Button>
 
-                        <!-- Quick Edit -->
+                        <!-- Inline Edit Trigger -->
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
                           class="h-7 w-7 p-0 rounded-lg text-slate-500 hover:text-slate-900"
-                          @click="openEditModal(guest)"
-                          title="Quick Edit Tamu"
+                          @click="startInlineEdit(guest)"
+                          title="Edit Tamu Langsung di Baris"
                         >
                           ✏️
                         </Button>
@@ -704,10 +1158,94 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
                 </TableBody>
               </Table>
             </div>
+
+            <!-- Pagination Control Bar -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <span>
+                  Menampilkan <strong class="text-slate-700 font-semibold">{{ paginationFrom }}</strong> - <strong class="text-slate-700 font-semibold">{{ paginationTo }}</strong> dari <strong class="text-slate-700 font-semibold">{{ totalFiltered }}</strong> undangan
+                </span>
+
+                <!-- Per Page Selector -->
+                <div class="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                  <span class="text-slate-400">Baris:</span>
+                  <select
+                    v-model="perPage"
+                    class="h-7 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 font-medium focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+                  >
+                    <option :value="10">10</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                    <option :value="100">100</option>
+                    <option value="all">Semua</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Page Navigation Buttons -->
+              <div v-if="totalPages > 1" class="flex items-center gap-1">
+                <!-- First Page -->
+                <button
+                  type="button"
+                  class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition shadow-2xs cursor-pointer font-bold text-xs"
+                  :disabled="currentPage === 1"
+                  @click="goToPage(1)"
+                  title="Halaman Pertama"
+                >
+                  «
+                </button>
+                <!-- Previous Page -->
+                <button
+                  type="button"
+                  class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition shadow-2xs cursor-pointer text-xs"
+                  :disabled="currentPage === 1"
+                  @click="goToPage(currentPage - 1)"
+                  title="Halaman Sebelumnya"
+                >
+                  ‹
+                </button>
+
+                <!-- Numeric Pages -->
+                <template v-for="(p, idx) in visiblePageNumbers" :key="idx">
+                  <span v-if="p === '...'" class="px-1 text-slate-400 select-none">…</span>
+                  <button
+                    v-else
+                    type="button"
+                    class="h-7 min-w-7 px-2 rounded-lg text-xs font-semibold transition cursor-pointer"
+                    :class="currentPage === p ? 'bg-emerald-600 text-white shadow-2xs' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs'"
+                    @click="goToPage(p)"
+                  >
+                    {{ p }}
+                  </button>
+                </template>
+
+                <!-- Next Page -->
+                <button
+                  type="button"
+                  class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition shadow-2xs cursor-pointer text-xs"
+                  :disabled="currentPage === totalPages"
+                  @click="goToPage(currentPage + 1)"
+                  title="Halaman Selanjutnya"
+                >
+                  ›
+                </button>
+                <!-- Last Page -->
+                <button
+                  type="button"
+                  class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition shadow-2xs cursor-pointer font-bold text-xs"
+                  :disabled="currentPage === totalPages"
+                  @click="goToPage(totalPages)"
+                  title="Halaman Terakhir"
+                >
+                  »
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Floating Sticky Bulk Action Toolbar -->
     <Transition
@@ -895,7 +1433,8 @@ const totalConfirmedPax = computed(() => props.stats?.confirmed_pax ?? guestList
             <p>3. <strong>Kategori / Grup:</strong> Contoh: <code>Keluarga</code>, <code>VIP</code>, <code>Teman Kantor</code>.</p>
             <p>4. <strong>Maks Pax:</strong> Jumlah kuota orang (default <code>2</code>).</p>
             <p>5. <strong>Sesi:</strong> Sesi atau jam kedatangan (contoh: <code>Sesi Akad (08.00-10.00)</code> atau <code>Sesi Resepsi</code>).</p>
-            <p>6. <strong>Catatan:</strong> Catatan khusus/VIP/meja (opsional).</p>
+            <p>6. <strong>Undangan Fisik:</strong> Diisi <code>Ya</code> jika ada kartu undangan fisik, atau <code>Tidak</code> jika hanya online (opsional).</p>
+            <p>7. <strong>Catatan:</strong> Catatan khusus/VIP/meja (opsional).</p>
           </div>
 
           <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">

@@ -34,6 +34,9 @@ const maxPax = ref(2)
 const applyStatusKirim = ref(false)
 const isInvitationSent = ref(true)
 
+const applyPhysical = ref(false)
+const isPhysicalInvitation = ref(true)
+
 const applyNotes = ref(false)
 const notes = ref('')
 
@@ -55,6 +58,8 @@ watch(
       maxPax.value = 2
       applyStatusKirim.value = false
       isInvitationSent.value = true
+      applyPhysical.value = false
+      isPhysicalInvitation.value = true
       applyNotes.value = false
       notes.value = ''
     }
@@ -66,7 +71,7 @@ function close() {
 }
 
 function submit() {
-  if (!applyGroup.value && !applySession.value && !applyMaxPax.value && !applyStatusKirim.value && !applyNotes.value) {
+  if (!applyGroup.value && !applySession.value && !applyMaxPax.value && !applyStatusKirim.value && !applyPhysical.value && !applyNotes.value) {
     return
   }
 
@@ -104,6 +109,8 @@ function submit() {
     max_pax: maxPax.value,
     apply_is_invitation_sent: applyStatusKirim.value,
     is_invitation_sent: isInvitationSent.value,
+    apply_is_physical_invitation: applyPhysical.value,
+    is_physical_invitation: isPhysicalInvitation.value,
     apply_notes: applyNotes.value,
     notes: notes.value,
   }
@@ -345,7 +352,42 @@ function submit() {
               </div>
             </div>
 
-            <!-- 4. Catatan Internal -->
+            <!-- 4. Undangan Fisik -->
+            <div class="rounded-xl border border-slate-200 p-3.5 transition" :class="{ 'bg-purple-50/40 border-purple-300': applyPhysical }">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  v-model="applyPhysical"
+                  class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
+                />
+                <span class="text-xs font-semibold text-slate-800">Ubah Penggunaan Undangan Fisik / Cetak</span>
+              </label>
+
+              <div v-if="applyPhysical" class="mt-3 pl-6 pt-1">
+                <div class="flex items-center gap-4 text-xs">
+                  <label class="flex items-center gap-1.5 cursor-pointer text-purple-900 font-medium">
+                    <input
+                      type="radio"
+                      :value="true"
+                      v-model="isPhysicalInvitation"
+                      class="text-purple-600"
+                    />
+                    <span>💌 Menggunakan Undangan Fisik (Ya)</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer text-slate-600">
+                    <input
+                      type="radio"
+                      :value="false"
+                      v-model="isPhysicalInvitation"
+                      class="text-slate-500"
+                    />
+                    <span>Tanpa Undangan Fisik / Digital Saja (Tidak)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Catatan Internal -->
             <div class="rounded-xl border border-slate-200 p-3.5 transition" :class="{ 'bg-emerald-50/40 border-emerald-300': applyNotes }">
               <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input

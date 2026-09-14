@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, nextTick } from 'vue'
-import { router } from '@inertiajs/vue3'
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -75,29 +74,26 @@ function selectSession(newSession) {
     emit('newSessionAdded', finalSession)
   }
 
-  router.patch(
-    `/weddings/${props.weddingId}/guests/${props.guest.id}/session`,
-    { session_name: finalSession },
-    {
-      preserveScroll: true,
-      preserveState: true,
-      onSuccess: () => {
-        isSaving.value = false
-        emit('updated', finalSession)
-        toast.success(
-          finalSession
-            ? `Sesi untuk "${props.guest.name}" diatur ke "${finalSession}".`
-            : `Sesi untuk "${props.guest.name}" dikosongkan.`
-        )
-      },
-      onError: (err) => {
-        isSaving.value = false
-        // Revert optimistic update
-        props.guest.session_name = oldSession
-        toast.error('Gagal memperbarui sesi: ' + (Object.values(err)[0] || 'Terjadi kesalahan'))
-      },
-    }
-  )
+  window.axios
+    .patch(`/weddings/${props.weddingId}/guests/${props.guest.id}/session`, {
+      session_name: finalSession,
+    })
+    .then(() => {
+      isSaving.value = false
+      emit('updated', finalSession)
+      toast.success(
+        finalSession
+          ? `Sesi untuk "${props.guest.name}" diatur ke "${finalSession}".`
+          : `Sesi untuk "${props.guest.name}" dikosongkan.`
+      )
+    })
+    .catch((err) => {
+      isSaving.value = false
+      // Revert optimistic update
+      props.guest.session_name = oldSession
+      const msg = err.response?.data?.message || err.message || 'Terjadi kesalahan'
+      toast.error('Gagal memperbarui sesi: ' + msg)
+    })
 }
 
 function handleAddNew() {

@@ -21,6 +21,7 @@ const form = ref({
   group_name: '',
   session_name: '',
   max_pax: 2,
+  is_physical_invitation: false,
   notes: '',
 })
 
@@ -39,6 +40,7 @@ watch(
           group_name: guest.group_name || '',
           session_name: guest.session_name || '',
           max_pax: guest.max_pax || 2,
+          is_physical_invitation: !!guest.is_physical_invitation,
           notes: guest.notes || '',
         }
       } else {
@@ -48,6 +50,7 @@ watch(
           group_name: '',
           session_name: '',
           max_pax: 2,
+          is_physical_invitation: false,
           notes: '',
         }
       }
@@ -206,6 +209,24 @@ function submit() {
                 <option v-for="s in availableSessions" :key="s" :value="s" />
               </datalist>
               <p v-if="errors.session_name" class="text-[11px] text-rose-500">{{ errors.session_name }}</p>
+            </div>
+
+            <!-- Undangan Fisik / Cetak -->
+            <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+              <div>
+                <Label for="quick_is_physical" class="text-xs font-semibold text-slate-800 cursor-pointer flex items-center gap-1.5">
+                  <span>💌</span> Undangan Fisik / Cetak
+                </Label>
+                <p class="text-[11px] text-slate-400 mt-0.5">
+                  Tandai jika tamu ini juga diberikan atau membutuhkan undangan cetak fisik.
+                </p>
+              </div>
+              <input
+                id="quick_is_physical"
+                type="checkbox"
+                v-model="form.is_physical_invitation"
+                class="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+              />
             </div>
 
             <!-- Catatan -->
