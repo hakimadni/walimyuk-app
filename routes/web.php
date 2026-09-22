@@ -114,12 +114,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('dashboard.weddings.guests.export');
         Route::get('guests/template', [GuestController::class, 'template'])
             ->name('dashboard.weddings.guests.template');
-        Route::post('guests/{guest}/mark-sent', [GuestController::class, 'markSent'])
-            ->name('dashboard.weddings.guests.mark-sent');
+        Route::post('guests/{guest}/toggle-sent', [GuestController::class, 'toggleSent'])
+            ->name('dashboard.weddings.guests.toggle-sent');
         Route::patch('guests/{guest}/session', [GuestController::class, 'updateSession'])
             ->name('dashboard.weddings.guests.update-session');
+        Route::patch('guests/{guest}/group', [GuestController::class, 'updateGroup'])
+            ->name('dashboard.weddings.guests.update-group');
+        Route::patch('guests/{guest}/source', [GuestController::class, 'updateSource'])
+            ->name('dashboard.weddings.guests.update-source');
         Route::patch('guests/{guest}/physical', [GuestController::class, 'updatePhysical'])
             ->name('dashboard.weddings.guests.update-physical');
+        Route::patch('guests/{guest}/vip', [GuestController::class, 'updateVip'])
+            ->name('dashboard.weddings.guests.update-vip');
         Route::resource('guests', GuestController::class)
             ->names('dashboard.weddings.guests');
 

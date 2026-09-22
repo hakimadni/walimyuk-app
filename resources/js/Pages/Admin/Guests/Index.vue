@@ -10,6 +10,8 @@ import { useToast } from '@/Composables/useToast'
 import BulkEditModal from '@/Components/Guests/BulkEditModal.vue'
 import QuickGuestModal from '@/Components/Guests/QuickGuestModal.vue'
 import GuestSessionSelect from '@/Components/Guests/GuestSessionSelect.vue'
+import GuestGroupSelect from '@/Components/Guests/GuestGroupSelect.vue'
+import GuestSourceSelect from '@/Components/Guests/GuestSourceSelect.vue'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -45,16 +47,37 @@ const editingGuest = ref(null)
 // Multi-selection state
 const selectedGuestIds = ref([])
 
+const extraGroups = ref([])
+
 const groupOptions = computed(() => {
-  if (props.availableGroups && props.availableGroups.length) {
-    return props.availableGroups
-  }
-  const groups = new Set()
+  const set = new Set([...(props.availableGroups || []), ...extraGroups.value])
   guestList.value.forEach(g => {
-    if (g.group_name) groups.add(g.group_name)
+    if (g.group_name) set.add(g.group_name)
   })
-  return Array.from(groups).sort()
+  return Array.from(set).filter(Boolean).sort()
 })
+
+function handleNewGroupAdded(newGroup) {
+  if (newGroup && !extraGroups.value.includes(newGroup)) {
+    extraGroups.value.push(newGroup)
+  }
+}
+
+const extraSources = ref([])
+
+const sourceOptions = computed(() => {
+  const set = new Set([...extraSources.value, 'CPP (Hakim)', 'CPW (Anya)', 'Ortu CPP (Hakim)', 'Ortu CPW (Anya)'])
+  guestList.value.forEach(g => {
+    if (g.guest_source) set.add(g.guest_source)
+  })
+  return Array.from(set).filter(Boolean).sort()
+})
+
+function handleNewSourceAdded(newSource) {
+  if (newSource && !extraSources.value.includes(newSource)) {
+    extraSources.value.push(newSource)
+  }
+}
 
 const extraSessions = ref([])
 
@@ -161,6 +184,32 @@ async function togglePhysical(guest) {
     toast.error('Gagal memperbarui status undangan fisik: ' + msg)
   } finally {
     togglingPhysicalId.value = null
+  }
+}
+
+const togglingVipId = ref(null)
+
+async function toggleVip(guest) {
+  togglingVipId.value = guest.id
+  const oldVal = guest.is_vip
+  const newVal = !oldVal
+  guest.is_vip = newVal
+
+  try {
+    await window.axios.patch(`/weddings/${props.wedding.id}/guests/${guest.id}/vip`, {
+      is_vip: newVal,
+    })
+    toast.success(
+      newVal
+        ? `Tamu "${guest.name}" ditandai sebagai VIP.`
+        : `Status VIP untuk "${guest.name}" dinonaktifkan.`
+    )
+  } catch (err) {
+    guest.is_vip = oldVal
+    const msg = err.response?.data?.message || err.message || 'Terjadi kesalahan'
+    toast.error('Gagal memperbarui status VIP: ' + msg)
+  } finally {
+    togglingVipId.value = null
   }
 }
 
@@ -352,9 +401,11 @@ function startInlineEdit(guest) {
     name: guest.name || '',
     phone_number: guest.phone_number || '',
     group_name: guest.group_name || '',
+    guest_source: guest.guest_source || '',
     session_name: guest.session_name || '',
     max_pax: guest.max_pax || 1,
     is_physical_invitation: Boolean(guest.is_physical_invitation),
+    is_vip: Boolean(guest.is_vip),
     notes: guest.notes || '',
   }
 }
@@ -375,9 +426,11 @@ async function saveInlineEdit(guest) {
       name: rowForm.value.name.trim(),
       phone_number: rowForm.value.phone_number?.trim() || null,
       group_name: rowForm.value.group_name?.trim() || null,
+      guest_source: rowForm.value.guest_source?.trim() || null,
       session_name: rowForm.value.session_name?.trim() || null,
       max_pax: Number(rowForm.value.max_pax) || 1,
       is_physical_invitation: Boolean(rowForm.value.is_physical_invitation),
+      is_vip: Boolean(rowForm.value.is_vip),
       notes: rowForm.value.notes?.trim() || null,
     }
 
@@ -446,16 +499,26 @@ function openWhatsApp(guest) {
 }
 
 // Single Actions
-async function markSent(guest) {
+const togglingSentId = ref(null)
+
+async function toggleSent(guest) {
+  togglingSentId.value = guest.id
   const oldVal = guest.is_invitation_sent
-  guest.is_invitation_sent = true
+  const newVal = !oldVal
+  guest.is_invitation_sent = newVal
   try {
-    await window.axios.post(`/weddings/${props.wedding.id}/guests/${guest.id}/mark-sent`, {})
-    toast.success(`Undangan untuk "${guest.name}" ditandai sudah dikirim.`)
+    await window.axios.post(`/weddings/${props.wedding.id}/guests/${guest.id}/toggle-sent`, {})
+    toast.success(
+      newVal
+        ? `Undangan untuk "${guest.name}" ditandai sudah dikirim.`
+        : `Tanda terkirim untuk "${guest.name}" dibatalkan.`
+    )
   } catch (err) {
     guest.is_invitation_sent = oldVal
     const msg = err.response?.data?.message || err.message || 'Terjadi kesalahan'
     toast.error('Gagal memperbarui status pengiriman: ' + msg)
+  } finally {
+    togglingSentId.value = null
   }
 }
 
@@ -850,7 +913,9 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
                         Nama &amp; Grup
                       </TableHead>
 
+                      <TableHead class="min-w-[130px] font-semibold text-slate-700">Tamu Dari</TableHead>
                       <TableHead class="min-w-[180px] font-semibold text-slate-700">Sesi Undangan</TableHead>
+                      <TableHead class="min-w-[100px] font-semibold text-slate-700 text-center">Tamu VIP</TableHead>
                       <TableHead class="min-w-[130px] font-semibold text-slate-700 text-center">Undangan Fisik</TableHead>
                       <TableHead class="min-w-[130px] font-semibold text-slate-700">Kontak</TableHead>
                       <TableHead class="min-w-[120px] font-semibold text-slate-700">Status Undangan</TableHead>
@@ -932,14 +997,38 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
                           {{ guest.name }}
                         </Link>
                         <div class="flex items-center gap-1.5 mt-0.5">
-                          <span v-if="guest.group_name" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                            {{ guest.group_name }}
-                          </span>
+                          <GuestGroupSelect
+                            :guest="guest"
+                            :wedding-id="wedding.id"
+                            :available-groups="groupOptions"
+                            @new-group-added="handleNewGroupAdded"
+                          />
                           <span v-if="guest.notes" class="text-[10px] text-slate-400 truncate max-w-xs" :title="guest.notes">
                             💬 {{ guest.notes }}
                           </span>
                         </div>
                       </div>
+                    </TableCell>
+
+                    <!-- Tamu Dari (Guest Source) -->
+                    <TableCell class="min-w-[150px]">
+                      <div v-if="editingRowId === guest.id" class="py-1">
+                        <input
+                          v-model="rowForm.guest_source"
+                          type="text"
+                          placeholder="Pilih atau ketik asal..."
+                          class="h-7 w-full rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                          @keydown.enter.prevent="saveInlineEdit(guest)"
+                          @keydown.esc.prevent="cancelInlineEdit"
+                        />
+                      </div>
+                      <GuestSourceSelect
+                        v-else
+                        :guest="guest"
+                        :wedding-id="wedding.id"
+                        :available-sources="sourceOptions"
+                        @new-source-added="handleNewSourceAdded"
+                      />
                     </TableCell>
 
                     <!-- Sesi Undangan Dropdown (Select2 Style) -->
@@ -962,6 +1051,39 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
                         :available-sessions="sessionOptions"
                         @new-session-added="handleNewSessionAdded"
                       />
+                    </TableCell>
+
+                    <!-- VIP Toggle -->
+                    <TableCell class="min-w-[100px] text-center">
+                      <button
+                        v-if="editingRowId === guest.id"
+                        type="button"
+                        @click="rowForm.is_vip = !rowForm.is_vip"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                        :class="rowForm.is_vip
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200'"
+                        title="Klik untuk ubah jenis tamu"
+                      >
+                        <span>{{ rowForm.is_vip ? '★' : '☆' }}</span>
+                        <span>{{ rowForm.is_vip ? 'VIP' : 'Reguler' }}</span>
+                      </button>
+
+                      <button
+                        v-else
+                        type="button"
+                        :disabled="togglingVipId === guest.id"
+                        @click="toggleVip(guest)"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer disabled:opacity-50"
+                        :class="guest.is_vip
+                          ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 shadow-2xs'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border border-slate-200'"
+                        :title="guest.is_vip ? 'Klik untuk batal VIP' : 'Klik untuk jadikan VIP'"
+                      >
+                        <span v-if="togglingVipId === guest.id" class="inline-block animate-spin text-[10px]">⏳</span>
+                        <span v-else>{{ guest.is_vip ? '★' : '☆' }}</span>
+                        <span>{{ guest.is_vip ? 'VIP' : 'Reguler' }}</span>
+                      </button>
                     </TableCell>
 
                     <!-- Undangan Fisik Toggle -->
@@ -1016,15 +1138,22 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
 
                     <!-- Status Undangan (Sent) -->
                     <TableCell class="min-w-[120px]">
-                      <div class="flex items-center gap-1.5">
-                        <span
-                          class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                          :class="guest.is_invitation_sent ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'"
-                        >
+                      <button
+                        type="button"
+                        :disabled="togglingSentId === guest.id"
+                        @click="toggleSent(guest)"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer disabled:opacity-50"
+                        :class="guest.is_invitation_sent 
+                          ? 'bg-emerald-100 text-emerald-800 hover:bg-rose-100 hover:text-rose-800 border border-transparent hover:border-rose-200' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'"
+                        :title="guest.is_invitation_sent ? 'Klik untuk batal terkirim' : 'Klik untuk tandai terkirim'"
+                      >
+                        <span v-if="togglingSentId === guest.id" class="inline-block animate-spin text-[10px]">⏳</span>
+                        <template v-else>
                           <span class="h-1.5 w-1.5 rounded-full" :class="guest.is_invitation_sent ? 'bg-emerald-600' : 'bg-slate-400'" />
-                          {{ guest.is_invitation_sent ? 'Terkirim' : 'Belum Dikirim' }}
-                        </span>
-                      </div>
+                          <span class="group-hover:line-through">{{ guest.is_invitation_sent ? 'Terkirim' : 'Belum Dikirim' }}</span>
+                        </template>
+                      </button>
                     </TableCell>
 
                     <!-- RSVP Status -->
@@ -1114,19 +1243,6 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
                           title="Salin tautan personal"
                         >
                           {{ copiedId === guest.id ? 'Tersalin!' : 'Salin Link' }}
-                        </Button>
-
-                        <!-- Mark Sent -->
-                        <Button
-                          v-if="!guest.is_invitation_sent"
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          class="h-7 rounded-lg px-1.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
-                          @click="markSent(guest)"
-                          title="Tandai sudah dikirim"
-                        >
-                          ✓ Kirim
                         </Button>
 
                         <!-- Inline Edit Trigger -->

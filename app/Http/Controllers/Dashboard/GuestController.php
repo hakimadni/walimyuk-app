@@ -216,6 +216,8 @@ class GuestController extends Controller
             'session_name' => ['nullable', 'string', 'max:150'],
             'max_pax' => ['required', 'integer', 'min:1'],
             'is_physical_invitation' => ['nullable', 'boolean'],
+            'is_vip' => ['nullable', 'boolean'],
+            'guest_source' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -250,25 +252,28 @@ class GuestController extends Controller
     /**
      * Mark a guest's invitation as sent.
      */
-    public function markSent(Request $request, Wedding $wedding, Guest $guest): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function toggleSent(Request $request, Wedding $wedding, Guest $guest): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $this->authorizeWedding($request, $wedding);
         $this->authorizeGuest($wedding, $guest);
 
+        $newStatus = !$guest->is_invitation_sent;
+
         $guest->update([
-            'is_invitation_sent' => true,
-            'sent_at' => now(),
+            'is_invitation_sent' => $newStatus,
+            'sent_at' => $newStatus ? now() : null,
         ]);
+
+        $message = $newStatus ? 'Undangan ditandai sudah dikirim.' : 'Tanda terkirim dibatalkan.';
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Undangan ditandai sudah dikirim.',
+                'message' => $message,
             ]);
         }
 
-        return redirect()->back()
-            ->with('success', 'Undangan ditandai sudah dikirim.');
+        return redirect()->back()->with('success', $message);
     }
 
     /**
@@ -301,6 +306,64 @@ class GuestController extends Controller
     }
 
     /**
+     * Update only the guest's group name.
+     */
+    public function updateGroup(Request $request, Wedding $wedding, Guest $guest): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $this->authorizeWedding($request, $wedding);
+        $this->authorizeGuest($wedding, $guest);
+
+        $validated = $request->validate([
+            'group_name' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $groupName = !empty($validated['group_name']) ? trim($validated['group_name']) : null;
+        $guest->update([
+            'group_name' => $groupName,
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Grup untuk {$guest->name} berhasil diperbarui.",
+                'group_name' => $groupName,
+            ]);
+        }
+
+        return redirect()->back()
+            ->with('success', "Grup untuk {$guest->name} berhasil diperbarui.");
+    }
+
+    /**
+     * Update only the guest's source (Tamu Dari).
+     */
+    public function updateSource(Request $request, Wedding $wedding, Guest $guest): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $this->authorizeWedding($request, $wedding);
+        $this->authorizeGuest($wedding, $guest);
+
+        $validated = $request->validate([
+            'guest_source' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $sourceName = !empty($validated['guest_source']) ? trim($validated['guest_source']) : null;
+        $guest->update([
+            'guest_source' => $sourceName,
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Asal/Afiliasi untuk {$guest->name} berhasil diperbarui.",
+                'guest_source' => $sourceName,
+            ]);
+        }
+
+        return redirect()->back()
+            ->with('success', "Asal/Afiliasi untuk {$guest->name} berhasil diperbarui.");
+    }
+
+    /**
      * Toggle or update only the guest's physical invitation flag.
      */
     public function updatePhysical(Request $request, Wedding $wedding, Guest $guest): RedirectResponse|\Illuminate\Http\JsonResponse
@@ -327,7 +390,37 @@ class GuestController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', 'Status undangan fisik berhasil diperbarui.');
+            ->with('success', $isPhysical ? "Undangan fisik untuk {$guest->name} diaktifkan." : "Undangan fisik dinonaktifkan.");
+    }
+
+    /**
+     * Toggle or update the VIP status directly via AJAX.
+     */
+    public function updateVip(Request $request, Wedding $wedding, Guest $guest): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $this->authorizeWedding($request, $wedding);
+        $this->authorizeGuest($wedding, $guest);
+
+        $isVip = $request->has('is_vip')
+            ? $request->boolean('is_vip')
+            : !$guest->is_vip;
+
+        $guest->update([
+            'is_vip' => $isVip,
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_vip' => $isVip,
+                'message' => $isVip
+                    ? "Tamu {$guest->name} ditandai sebagai VIP."
+                    : "Status VIP untuk {$guest->name} dibatalkan.",
+            ]);
+        }
+
+        return redirect()->back()
+            ->with('success', $isVip ? "Tamu {$guest->name} ditandai sebagai VIP." : "Status VIP dinonaktifkan.");
     }
 
     /**
@@ -370,6 +463,8 @@ class GuestController extends Controller
             'is_invitation_sent' => ['nullable', 'boolean'],
             'apply_is_physical_invitation' => ['nullable', 'boolean'],
             'is_physical_invitation' => ['nullable', 'boolean'],
+            'apply_is_vip' => ['nullable', 'boolean'],
+            'is_vip' => ['nullable', 'boolean'],
             'apply_notes' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -391,6 +486,9 @@ class GuestController extends Controller
         }
         if (!empty($validated['apply_is_physical_invitation'])) {
             $updates['is_physical_invitation'] = (bool) ($validated['is_physical_invitation'] ?? false);
+        }
+        if (!empty($validated['apply_is_vip'])) {
+            $updates['is_vip'] = (bool) ($validated['is_vip'] ?? false);
         }
         if (!empty($validated['apply_notes'])) {
             $updates['notes'] = !empty($validated['notes']) ? trim($validated['notes']) : null;

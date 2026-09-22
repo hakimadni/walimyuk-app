@@ -19,6 +19,7 @@ class Guest extends Model
         'name',
         'phone_number',
         'group_name',
+        'guest_source',
         'session_name',
         'max_pax',
         'token',
@@ -26,6 +27,7 @@ class Guest extends Model
         'slug',
         'is_invitation_sent',
         'is_physical_invitation',
+        'is_vip',
         'sent_at',
         'notes',
     ];
@@ -55,6 +57,7 @@ class Guest extends Model
         'max_pax' => 'integer',
         'is_invitation_sent' => 'boolean',
         'is_physical_invitation' => 'boolean',
+        'is_vip' => 'boolean',
         'sent_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
