@@ -27,16 +27,16 @@ const editingNotesId = ref(null)
 const notesDraft = ref('')
 
 const stageOptions = [
-  { key: 'rt_rw', title: '1. RT/RW (Persyaratan yang Dibawa)' },
-  { key: 'puskesmas', title: '2. PUSKESMAS (Pemeriksaan Kesehatan & Sertifikat Layak Nikah)' },
-  { key: 'kelurahan', title: '3. KELURAHAN (SCAN DOKSLI - Upload di Jakevo)' },
-  { key: 'kua_rekomendasi', title: '4. KUA Domisili Asal (Surat Rekomendasi Nikah / Numpang Nikah)' },
-  { key: 'kua_venue', title: '5. KUA Venue Pernikahan (Daftar Online SIMKAH Dulu, Baru Bawa Berkas Asli)' },
+  { key: 'rt_rw', title: 'RT/RW (Persyaratan yang Dibawa)' },
+  { key: 'puskesmas', title: 'PUSKESMAS (Pemeriksaan Kesehatan & Sertifikat Layak Nikah)' },
+  { key: 'kelurahan', title: 'KELURAHAN (SCAN DOKSLI - Upload di Jakevo)' },
+  { key: 'kua_rekomendasi', title: 'KUA Domisili Asal (Surat Rekomendasi Nikah / Numpang Nikah)' },
+  { key: 'kua_venue', title: 'KUA Venue Pernikahan (Daftar Online SIMKAH Dulu, Baru Bawa Berkas Asli)' },
 ]
 
 const addForm = useForm({
   stage_key: 'rt_rw',
-  stage_title: '1. RT/RW (Persyaratan yang Dibawa)',
+  stage_title: 'RT/RW (Persyaratan yang Dibawa)',
   document_name: '',
   notes: '',
 })
@@ -222,6 +222,9 @@ function printChecklist() {
           <p class="text-sm text-slate-500">
             Persyaratan berkas nikah resmi Catin Pria &amp; Catin Wanita: RT/RW, Puskesmas, Kelurahan (Jakevo), hingga KUA Venue.
           </p>
+          <div class="mt-2.5 inline-flex rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 shadow-sm border border-amber-100/50 print:hidden">
+            <strong>Catatan:</strong>&nbsp;Daftar ini adalah panduan umum berdasarkan pengalaman kepengurusan di KUA Jakarta Selatan. SOP tiap daerah dapat berbeda.
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 print:hidden">
@@ -578,13 +581,13 @@ function printChecklist() {
           >
             <!-- Stage Header -->
             <div class="flex flex-col gap-2 border-b border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex items-center gap-3">
-                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-800 text-xs font-bold text-white">
+              <div class="flex items-start gap-3 sm:items-center">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-800 text-xs font-bold text-white">
                   {{ group.key === 'rt_rw' ? '1' : group.key === 'puskesmas' ? '2' : group.key === 'kelurahan' ? '3' : group.key === 'kua_rekomendasi' ? '4' : '5' }}
                 </span>
                 <div>
                   <h3 class="font-serif text-base font-bold text-slate-900">
-                    {{ group.key === 'kua_rekomendasi' ? '4. KUA Domisili Asal (Surat Rekomendasi Nikah / Numpang Nikah)' : group.title }}
+                    {{ group.key === 'kua_rekomendasi' ? 'KUA Domisili Asal (Surat Rekomendasi Nikah / Numpang Nikah)' : group.title.replace(/^\d+\.\s*/, '') }}
                   </h3>
                   <p class="text-[11px] text-slate-500">
                     <span v-if="group.key === 'kua_rekomendasi' && config.scenario === 'none'" class="text-amber-700 font-semibold">
@@ -597,7 +600,8 @@ function printChecklist() {
                       🤵 CPP tidak perlu rekomendasi (Menikah di KUA CPP). Hanya CPW yang butuh rekomendasi.
                     </span>
                     <span v-else>
-                      {{ group.items.length }} butir persyaratan yang harus dibawa/dilengkapi
+                      {{ group.items.length }} butir persyaratan yang harus dibawa/dilengkapi.
+                      <span class="text-amber-600/90 italic ml-1">*SOP daerah mungkin berbeda.</span>
                     </span>
                   </p>
                 </div>

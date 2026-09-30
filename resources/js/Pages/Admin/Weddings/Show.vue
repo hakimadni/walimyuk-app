@@ -215,98 +215,99 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
             <!-- Quick Management Modules -->
             <Card class="border-slate-200">
               <CardHeader>
-                <CardTitle class="font-serif text-lg font-bold text-emerald-950">Aksi &amp; Modul Undangan Lengkap</CardTitle>
-                <CardDescription>Akses menu pengelolaan seluruh fitur dan konten undangan Anda</CardDescription>
+                <CardTitle class="font-serif text-lg font-bold text-emerald-950">Tahapan Persiapan Undangan</CardTitle>
+                <CardDescription>Lengkapi data dan rancang undangan Anda secara berurutan hingga siap disebar</CardDescription>
               </CardHeader>
               <CardContent>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Link :href="`/weddings/${wedding.id}/guests`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-emerald-100 p-2.5 text-emerald-800 group-hover:scale-105 transition text-lg">
-                      👥
+                  <Link :href="`/weddings/${wedding.id}/document-checklist`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-xl transition group-hover:scale-105">
+                      📋
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Manajemen Tamu</p>
-                      <p class="text-xs text-slate-400">Buat link personal, impor CSV, WhatsApp broadcast</p>
-                    </div>
-                  </Link>
-
-                  <Link :href="`/weddings/${wedding.id}/builder`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-amber-100 p-2.5 text-amber-800 group-hover:scale-105 transition text-lg">
-                      🎨
-                    </div>
-                    <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Theme &amp; Block Builder</p>
-                      <p class="text-xs text-slate-400">Susun seksi draggable, palet warna, tipografi</p>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">1. Persiapan Dokumen KUA</p>
+                      <p class="text-xs text-slate-500 mb-1">Ceklis syarat pengantar RT/RW, Puskesmas &amp; kelurahan</p>
+                      <p class="text-[10px] text-amber-600/90 leading-tight italic">*SOP tiap daerah dapat berbeda. Referensi ini berdasarkan pengalaman kepengurusan KUA di Jakarta Selatan.</p>
                     </div>
                   </Link>
 
                   <Link :href="`/weddings/${wedding.id}/couple-profiles`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-emerald-100 p-2.5 text-emerald-800 group-hover:scale-105 transition text-lg">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-xl transition group-hover:scale-105">
                       🤵👰
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Profil Mempelai</p>
-                      <p class="text-xs text-slate-400">Data pengantin, orang tua, &amp; media sosial</p>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">2. Profil &amp; Keluarga</p>
+                      <p class="text-xs text-slate-500">Isi data lengkap kedua mempelai dan nama orang tua</p>
                     </div>
                   </Link>
 
                   <Link :href="`/weddings/${wedding.id}/events`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-blue-100 p-2.5 text-blue-800 group-hover:scale-105 transition text-lg">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-800 text-xl transition group-hover:scale-105">
                       📅
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Jadwal &amp; Lokasi Acara</p>
-                      <p class="text-xs text-slate-400">Akad nikah, resepsi, peta Google Maps</p>
-                    </div>
-                  </Link>
-
-                  <Link :href="`/weddings/${wedding.id}/rsvps`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-teal-100 p-2.5 text-teal-800 group-hover:scale-105 transition text-lg">
-                      🍛
-                    </div>
-                    <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">RSVP &amp; Kalkulator Katering</p>
-                      <p class="text-xs text-slate-400">Hitung porsi aman &amp; ekspor CSV vendor</p>
-                    </div>
-                  </Link>
-
-                  <Link :href="`/weddings/${wedding.id}/wishes`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-purple-100 p-2.5 text-purple-800 group-hover:scale-105 transition text-lg">
-                      💌
-                    </div>
-                    <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Buku Ucapan &amp; Doa</p>
-                      <p class="text-xs text-slate-400">Moderasi dan setujui doa para tamu</p>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">3. Rangkaian Acara</p>
+                      <p class="text-xs text-slate-500">Waktu, lokasi akad/resepsi, dan titik peta Google Maps</p>
                     </div>
                   </Link>
 
                   <Link :href="`/weddings/${wedding.id}/wedding-verses`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-amber-100 p-2.5 text-amber-800 group-hover:scale-105 transition text-lg">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800 text-xl transition group-hover:scale-105">
                       📖
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Ayat Suci &amp; Doa</p>
-                      <p class="text-xs text-slate-400">QS Ar-Rum 21, An-Nur 32, Hadits pernikahan</p>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">4. Kutipan &amp; Doa</p>
+                      <p class="text-xs text-slate-500">Pilih ayat pengantar (seperti QS Ar-Rum) atau hadits</p>
                     </div>
                   </Link>
 
                   <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-indigo-100 p-2.5 text-indigo-800 group-hover:scale-105 transition text-lg">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-800 text-xl transition group-hover:scale-105">
                       💳
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Amplop Digital &amp; Kado</p>
-                      <p class="text-xs text-slate-400">Nomor rekening transfer &amp; alamat kirim kado</p>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">5. Amplop &amp; Kado Fisik</p>
+                      <p class="text-xs text-slate-500">Nomor rekening transfer dan alamat penerimaan kado</p>
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/document-checklist`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
-                    <div class="rounded-lg bg-emerald-100 p-2.5 text-emerald-800 group-hover:scale-105 transition text-lg">
-                      📋
+                  <Link :href="`/weddings/${wedding.id}/builder`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800 text-xl transition group-hover:scale-105">
+                      🎨
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">Ceklis Dokumen Pernikahan</p>
-                      <p class="text-xs text-slate-400">Persyaratan RT/RW, Puskesmas, Kelurahan, KUA</p>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">6. Desain Tampilan Undangan</p>
+                      <p class="text-xs text-slate-500">Atur warna, font, dan susunan bagian undangan</p>
+                    </div>
+                  </Link>
+
+                  <Link :href="`/weddings/${wedding.id}/guests`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-xl transition group-hover:scale-105">
+                      👥
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">7. Daftar &amp; Sebar Undangan</p>
+                      <p class="text-xs text-slate-500">Kelola tamu, buat link unik, &amp; broadcast WhatsApp</p>
+                    </div>
+                  </Link>
+
+                  <Link :href="`/weddings/${wedding.id}/rsvps`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-800 text-xl transition group-hover:scale-105">
+                      🍛
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">8. RSVP &amp; Katering</p>
+                      <p class="text-xs text-slate-500">Pantau konfirmasi kehadiran &amp; hitung estimasi porsi</p>
+                    </div>
+                  </Link>
+
+                  <Link :href="`/weddings/${wedding.id}/wishes`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-800 text-xl transition group-hover:scale-105">
+                      💌
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold text-emerald-950 group-hover:text-emerald-700">9. Kotak Ucapan</p>
+                      <p class="text-xs text-slate-500">Lihat dan moderasi doa yang masuk dari para tamu</p>
                     </div>
                   </Link>
                 </div>
