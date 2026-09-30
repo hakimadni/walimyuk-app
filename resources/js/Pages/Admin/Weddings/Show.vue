@@ -3,8 +3,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, Link } from '@inertiajs/vue3'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { formatDate } from '@/lib/date'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 
 const props = defineProps({
   wedding: { type: Object, required: true },
@@ -16,6 +18,36 @@ const profiles = computed(() => props.wedding.couple_profiles || props.wedding.c
 const groom = computed(() => profiles.value.find((p) => p.role === 'groom') || profiles.value[0] || null)
 const bride = computed(() => profiles.value.find((p) => p.role === 'bride') || profiles.value[1] || null)
 const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || []).filter((block) => block.enabled))
+
+const startTour = () => {
+  const driverObj = driver({
+    showProgress: true,
+    nextBtnText: 'Selanjutnya &rarr;',
+    prevBtnText: '&larr; Sebelumnya',
+    doneBtnText: 'Selesai',
+    steps: [
+      { element: '#tour-persiapan-modul', popover: { title: 'Tahapan Persiapan', description: 'Selamat datang! Di sinilah tempat Anda akan mengelola seluruh persiapan undangan, mulai dari dokumen KUA hingga daftar tamu.', side: 'top', align: 'start' } },
+      { element: '#tour-step-1', popover: { title: '1. Dokumen KUA', description: 'Langkah pertama: Siapkan dan kelola berkas syarat KUA, RT/RW, Puskesmas hingga Kelurahan di sini.', side: 'bottom', align: 'start' } },
+      { element: '#tour-step-2', popover: { title: '2. Profil & Keluarga', description: 'Isi identitas lengkap kedua mempelai dan nama orang tua agar muncul di undangan.', side: 'bottom', align: 'start' } },
+      { element: '#tour-step-6', popover: { title: 'Desain Undangan', description: 'Setelah data inti terisi, Anda bisa mengatur warna, font, dan urutan seksi desain di Theme Builder.', side: 'bottom', align: 'start' } },
+      { element: '#tour-step-7', popover: { title: 'Daftar & Sebar Undangan', description: 'Tambahkan nama-nama tamu Anda, dan otomatis buatkan link unik serta template pesan WhatsApp untuk disebar.', side: 'bottom', align: 'start' } },
+      { element: '#tour-builder-btn', popover: { title: 'Live Preview & Builder', description: 'Gunakan tombol ini kapan pun untuk melihat atau mengedit wujud undangan Anda secara live.', side: 'bottom', align: 'end' } },
+    ],
+    onDestroyStarted: () => {
+      localStorage.setItem('walimyuk_tour_completed', 'true')
+      driverObj.destroy()
+    }
+  })
+  driverObj.drive()
+}
+
+onMounted(() => {
+  if (!localStorage.getItem('walimyuk_tour_completed')) {
+    setTimeout(() => {
+      startTour()
+    }, 500)
+  }
+})
 </script>
 
 <template>
@@ -41,15 +73,21 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+          <Button @click="startTour" variant="outline" class="border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 flex items-center gap-1.5 shadow-sm">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Panduan
+          </Button>
           <a v-if="previewUrl" :href="previewUrl" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" class="border-emerald-200 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 flex items-center gap-1.5">
+            <Button variant="outline" class="border-emerald-200 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 flex items-center gap-1.5 shadow-sm">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
               Buka Undangan
             </Button>
           </a>
-          <Link :href="`/weddings/${wedding.id}/builder`">
+          <Link :href="`/weddings/${wedding.id}/builder`" id="tour-builder-btn">
             <Button class="bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 flex items-center gap-1.5 shadow-sm">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -213,14 +251,14 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
             </Card>
 
             <!-- Quick Management Modules -->
-            <Card class="border-slate-200">
+            <Card class="border-slate-200" id="tour-persiapan-modul">
               <CardHeader>
                 <CardTitle class="font-serif text-lg font-bold text-emerald-950">Tahapan Persiapan Undangan</CardTitle>
                 <CardDescription>Lengkapi data dan rancang undangan Anda secara berurutan hingga siap disebar</CardDescription>
               </CardHeader>
               <CardContent>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Link :href="`/weddings/${wedding.id}/document-checklist`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/document-checklist`" id="tour-step-1" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-xl transition group-hover:scale-105">
                       📋
                     </div>
@@ -231,7 +269,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/couple-profiles`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/couple-profiles`" id="tour-step-2" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-xl transition group-hover:scale-105">
                       🤵👰
                     </div>
@@ -241,7 +279,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/events`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/events`" id="tour-step-3" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-800 text-xl transition group-hover:scale-105">
                       📅
                     </div>
@@ -251,7 +289,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/wedding-verses`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/wedding-verses`" id="tour-step-4" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800 text-xl transition group-hover:scale-105">
                       📖
                     </div>
@@ -261,7 +299,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/gift-bank-accounts`" id="tour-step-5" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-800 text-xl transition group-hover:scale-105">
                       💳
                     </div>
@@ -271,7 +309,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/builder`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/builder`" id="tour-step-6" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800 text-xl transition group-hover:scale-105">
                       🎨
                     </div>
@@ -281,7 +319,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/guests`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/guests`" id="tour-step-7" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-xl transition group-hover:scale-105">
                       👥
                     </div>
@@ -291,7 +329,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/rsvps`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/rsvps`" id="tour-step-8" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-800 text-xl transition group-hover:scale-105">
                       🍛
                     </div>
@@ -301,7 +339,7 @@ const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || [])
                     </div>
                   </Link>
 
-                  <Link :href="`/weddings/${wedding.id}/wishes`" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                  <Link :href="`/weddings/${wedding.id}/wishes`" id="tour-step-9" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-50/30">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-800 text-xl transition group-hover:scale-105">
                       💌
                     </div>

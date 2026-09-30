@@ -12,6 +12,15 @@ const showingMobileMenu = ref(false);
 const page = usePage();
 const toast = useToast();
 
+const resetTour = () => {
+  localStorage.removeItem('walimyuk_tour_completed');
+  if (window.location.pathname.includes('/weddings/')) {
+    window.location.reload();
+  } else {
+    toast.success('Status panduan interaktif di-reset. Silakan buka halaman Detail Undangan.');
+  }
+};
+
 watch(
   () => page.props.flash,
   (flash) => {
@@ -106,6 +115,9 @@ watch(
           </template>
 
           <template #content>
+            <button @click="resetTour" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-800 dark:focus:bg-gray-800">
+              Reset Tutorial Panduan
+            </button>
             <DropdownLink :href="route('profile.edit')"> Profile </DropdownLink>
             <DropdownLink :href="route('logout')" method="post" as="button">
               Log Out
@@ -116,7 +128,7 @@ watch(
     </aside>
 
     <!-- Main content area -->
-    <div class="flex flex-1 flex-col overflow-hidden">
+    <div class="flex flex-1 flex-col overflow-hidden lg:pl-4">
       <!-- Mobile header -->
       <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
         <Link :href="route('dashboard')" class="flex items-center gap-2">
@@ -133,19 +145,12 @@ watch(
         </button>
       </header>
 
-      <!-- Page Heading (Desktop only if needed, or both) -->
-      <header v-if="$slots.header" class="shrink-0 bg-white shadow-sm z-10 hidden lg:block">
-        <div class="px-8 py-5">
+      <!-- Page Heading -->
+      <header v-if="$slots.header" class="shrink-0 bg-white shadow-md z-10 rounded-b-2xl lg:rounded-b-none lg:rounded-bl-2xl">
+        <div class="px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
           <slot name="header" />
         </div>
       </header>
-      
-      <!-- Mobile Page Heading -->
-      <div v-if="$slots.header" class="shrink-0 bg-white shadow-sm z-10 lg:hidden">
-        <div class="px-4 py-4">
-          <slot name="header" />
-        </div>
-      </div>
 
       <!-- Main content scrollable area -->
       <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
