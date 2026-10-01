@@ -55,24 +55,26 @@ onMounted(() => {
 
   <AuthenticatedLayout>
     <template #header>
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div class="flex items-center gap-3">
-            <h2 class="font-serif text-3xl font-bold text-emerald-950">
-              {{ groom?.full_name || 'Mempelai Pria' }} &amp; {{ bride?.full_name || 'Mempelai Wanita' }}
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <h2 class="font-serif text-2xl sm:text-3xl font-bold text-emerald-950 break-words leading-tight">
+              <span class="block sm:inline">{{ groom?.full_name || 'Mempelai Pria' }}</span>
+              <span class="block sm:inline text-emerald-700/80 sm:mx-1">&amp;</span>
+              <span class="block sm:inline">{{ bride?.full_name || 'Mempelai Wanita' }}</span>
             </h2>
             <span
-              class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize self-start sm:self-auto"
               :class="wedding.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
             >
               <span class="h-1.5 w-1.5 rounded-full" :class="wedding.status === 'published' ? 'bg-emerald-600' : 'bg-amber-600'" />
               {{ wedding.status || 'Draft' }}
             </span>
           </div>
-          <p class="mt-1 text-sm text-slate-500">{{ wedding.cover_title }} • {{ wedding.wedding_date ? formatDate(wedding.wedding_date) : 'Tanggal belum diatur' }}</p>
+          <p class="mt-2 sm:mt-1 text-sm text-slate-500 truncate">{{ wedding.cover_title }} • {{ wedding.wedding_date ? formatDate(wedding.wedding_date) : 'Tanggal belum diatur' }}</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 shrink-0 xl:ml-4">
           <Button @click="startTour" variant="outline" class="border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 flex items-center gap-1.5 shadow-sm">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
