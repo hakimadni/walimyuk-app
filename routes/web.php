@@ -76,6 +76,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', \App\Http\Controllers\Dashboard\UserController::class)
         ->names('dashboard.users');
 
+    // ─── Message Templates ───
+    Route::apiResource('message-templates', \App\Http\Controllers\Dashboard\MessageTemplateController::class)->only(['index', 'store', 'destroy']);
+
     // ─── Wedding CRUD ───
     Route::resource('weddings', WeddingController::class)
         ->names('dashboard.weddings');

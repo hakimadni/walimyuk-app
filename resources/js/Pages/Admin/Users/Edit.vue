@@ -15,7 +15,21 @@ const form = useForm({
   email: props.userModel.email || '',
   password: '',
   role: props.userModel.role || 'tenant',
-  is_premium: props.userModel.is_premium == 1
+  is_premium: props.userModel.is_premium == 1,
+  builder_permissions: props.userModel.builder_permissions || {
+    tenant_builder_enabled: false,
+    block_builder: false,
+    custom_decorations: false,
+    custom_font: false,
+    custom_text: true,
+    character_image: false,
+    background_image: false,
+    decoration_animation: false,
+    music: false,
+    palette: false,
+    block_visibility: true,
+    block_order: true,
+  }
 })
 
 function submit() {
@@ -79,6 +93,64 @@ function submit() {
                 <p class="text-xs text-slate-500">Membuka semua fitur terkunci (contoh: hapus watermark, dsb).</p>
               </div>
               <InputError :message="form.errors.is_premium" />
+            </div>
+
+            <!-- Permission Matrix for Tenant -->
+            <div v-if="form.role === 'tenant'" class="rounded-xl border border-slate-200 bg-slate-50 p-6 space-y-4">
+              <div>
+                <h3 class="font-serif text-lg font-bold text-emerald-950">Permission Matrix (Builder Guardrails)</h3>
+                <p class="text-xs text-slate-500">Atur izin fitur yang bisa diakses user ini saat membangun undangannya.</p>
+              </div>
+              <div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.tenant_builder_enabled" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Tenant Builder Aktif</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.block_builder" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Block Builder Seksi</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.custom_decorations" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Kustomisasi Ornamen/Dekorasi</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.custom_font" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Pilihan Font Family</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.custom_text" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Kustomisasi Teks Cover &amp; Penutup</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.character_image" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Gambar Ilustrasi Karakter</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.background_image" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Background Image</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.decoration_animation" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Animasi Dekorasi</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.music" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Musik Latar &amp; Autoplay</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.palette" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Palet Warna Undangan</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.block_visibility" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Visibilitas Blok (On/Off)</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="form.builder_permissions.block_order" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <span class="font-medium text-slate-700">Urutan Blok (Draggable)</span>
+                </label>
+              </div>
             </div>
 
             <div class="flex items-center justify-end pt-4">

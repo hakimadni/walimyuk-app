@@ -5,6 +5,13 @@ import { ref, computed, watch } from 'vue'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { useConfirm } from '@/Composables/useConfirm'
 import { useToast } from '@/Composables/useToast'
 import BulkEditModal from '@/Components/Guests/BulkEditModal.vue'
@@ -478,24 +485,58 @@ function copyPersonalLink(guest) {
   }, 2000)
 }
 
-function openWhatsApp(guest) {
-  const url = getPersonalLink(guest)
-  const couple = props.wedding.cover_subtitle || props.wedding.cover_title || 'Pernikahan Kami'
-  const sessionInfo = guest.session_name ? `\n*Sesi / Waktu Acara:*\n${guest.session_name}\n` : ''
-  const text = encodeURIComponent(
-    `Kepada Yth. *${guest.name}*,\n\n` +
-    `Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n\n` +
-    `*${couple}*\n` +
-    sessionInfo + `\n` +
-    `Informasi lengkap & konfirmasi kehadiran (RSVP) dapat diakses melalui tautan undangan personal berikut:\n` +
-    `${url}\n\n` +
-    `Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\n` +
-    `Terima kasih.`
-  )
+const waModalOpen = ref(false)
+const selectedGuestForWa = ref(null)
+const waTemplates = ref({ global: [], custom: [], can_create: false })
+const selectedTemplateContent = ref('')
 
-  const phone = (guest.phone_number || '').replace(/[^0-9]/g, '')
+async function fetchWaTemplates() {
+  try {
+    const res = await window.axios.get('/message-templates')
+    waTemplates.value = res.data
+  } catch (err) {
+    console.error('Failed to load WA templates', err)
+  }
+}
+
+function openWhatsApp(guest) {
+  selectedGuestForWa.value = guest
+  
+  if (!waTemplates.value.global.length && !waTemplates.value.custom.length) {
+    fetchWaTemplates().then(() => {
+      if (waTemplates.value.global.length > 0) {
+        selectedTemplateContent.value = waTemplates.value.global[0].content
+      }
+    })
+  } else if (!selectedTemplateContent.value && waTemplates.value.global.length > 0) {
+    selectedTemplateContent.value = waTemplates.value.global[0].content
+  }
+  
+  waModalOpen.value = true
+}
+
+const previewWaText = computed(() => {
+  if (!selectedGuestForWa.value || !selectedTemplateContent.value) return ''
+  const guest = selectedGuestForWa.value
+  const url = getPersonalLink(guest)
+  
+  return selectedTemplateContent.value
+    .replace(/\[NAMA_TAMU\]/g, guest.name || '')
+    .replace(/\[LINK_UNDANGAN\]/g, url)
+})
+
+function sendWa() {
+  if (!selectedGuestForWa.value) return
+  const phone = (selectedGuestForWa.value.phone_number || '').replace(/[^0-9]/g, '')
+  const text = encodeURIComponent(previewWaText.value)
   const waUrl = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`
   window.open(waUrl, '_blank')
+  waModalOpen.value = false
+}
+
+function copyWaText() {
+  navigator.clipboard.writeText(previewWaText.value)
+  toast.success('Pesan berhasil disalin ke clipboard')
 }
 
 // Single Actions
@@ -1577,5 +1618,54 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
         </form>
       </div>
     </div>
+    <Dialog v-model:open="waModalOpen">
+      <DialogContent class="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader class="px-6 py-4 border-b border-slate-100 flex-shrink-0">
+          <DialogTitle class="text-xl font-serif text-emerald-950">
+            Kirim WhatsApp ke {{ selectedGuestForWa?.name }}
+          </DialogTitle>
+          <p class="text-sm text-slate-500 mt-1">Pilih template pesan dan pratinjau sebelum mengirim.</p>
+        </DialogHeader>
+        
+        <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <!-- Template Selector -->
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700">Pilih Template</label>
+            <select v-model="selectedTemplateContent" class="w-full rounded-md border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+              <optgroup v-if="waTemplates.global.length" label="Global Templates">
+                <option v-for="t in waTemplates.global" :key="'g'+t.id" :value="t.content">{{ t.name }}</option>
+              </optgroup>
+              <optgroup v-if="waTemplates.custom.length" label="Custom Templates (My Templates)">
+                <option v-for="t in waTemplates.custom" :key="'c'+t.id" :value="t.content">{{ t.name }}</option>
+              </optgroup>
+            </select>
+            <p v-if="waTemplates.can_create" class="text-xs text-emerald-600 font-medium">
+              *Anda bisa menambahkan template khusus di halaman manajemen template.
+            </p>
+          </div>
+
+          <!-- Preview -->
+          <div class="space-y-2 flex-1 flex flex-col">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-700">Pratinjau Pesan</label>
+              <button type="button" @click="copyWaText" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                <Copy class="w-3 h-3" /> Copy Teks
+              </button>
+            </div>
+            <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-sm text-slate-800 whitespace-pre-wrap font-sans h-48 overflow-y-auto">
+              {{ previewWaText }}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex-shrink-0 flex items-center justify-end gap-3">
+          <Button variant="outline" @click="waModalOpen = false">Batal</Button>
+          <Button class="bg-[#25D366] hover:bg-[#128C7E] text-white" @click="sendWa">
+            <MessageCircle class="w-4 h-4 mr-2" /> Buka WhatsApp
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
   </AuthenticatedLayout>
 </template>

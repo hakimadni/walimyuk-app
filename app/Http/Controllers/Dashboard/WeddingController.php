@@ -361,26 +361,10 @@ class WeddingController extends Controller
 
         $merged = array_replace_recursive($current, $incoming);
 
-        // Explicitly sync permissions for admin to avoid array_replace_recursive retaining un-checked checkboxes
-        if ($this->isAdmin($request)) {
-            $permissionKeys = [
-                'tenant_builder_enabled',
-                'block_builder',
-                'custom_decorations',
-                'custom_font',
-                'custom_text',
-                'character_image',
-                'background_image',
-                'decoration_animation',
-                'music',
-                'palette',
-                'block_visibility',
-                'block_order',
-            ];
-            foreach ($permissionKeys as $pKey) {
-                $rawVal = $request->input("builder.permissions.{$pKey}");
-                $merged['permissions'][$pKey] = filter_var($rawVal, FILTER_VALIDATE_BOOLEAN);
-            }
+        // We no longer save permissions to the wedding theme_config
+        // Permissions are managed via User Management.
+        if (isset($merged['permissions'])) {
+            unset($merged['permissions']);
         }
 
         // Explicitly sync blocks array so that enabled states and order are accurately preserved
@@ -487,10 +471,16 @@ class WeddingController extends Controller
 
     private function resolveBuilderConfig(Wedding $wedding): array
     {
-        return array_replace_recursive(
+        $config = array_replace_recursive(
             self::BUILDER_DEFAULTS,
             $wedding->theme_config['builder'] ?? []
         );
+
+        // Override permissions from user settings
+        $userPermissions = $wedding->user->builder_permissions ?? self::BUILDER_DEFAULTS['permissions'];
+        $config['permissions'] = $userPermissions;
+
+        return $config;
     }
 
     private function isAdmin(Request $request): bool
