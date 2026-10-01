@@ -1,0 +1,27 @@
+services:
+  app:
+    build:
+      context: ./
+    container_name: walimyuk-app
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - walimyuk
+    restart: unless-stopped
+
+  web:
+    image: nginx:latest
+    container_name: walimyuk-web
+    ports:
+      - '8084:80'
+    volumes:
+      - ./:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - walimyuk
+    restart: unless-stopped
+
+networks:
+  walimyuk:
