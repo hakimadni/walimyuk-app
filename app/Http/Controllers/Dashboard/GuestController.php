@@ -81,6 +81,32 @@ class GuestController extends Controller
             }
         }
 
+        if ($request->filled('vip') && $request->input('vip') !== 'all') {
+            if ($request->input('vip') === 'vip') {
+                $query->where('is_vip', true);
+            } elseif ($request->input('vip') === 'regular') {
+                $query->where('is_vip', false);
+            }
+        }
+
+        if ($request->filled('attended') && $request->input('attended') !== 'all') {
+            if ($request->input('attended') === 'attended') {
+                $query->where('is_attended', true);
+            } elseif ($request->input('attended') === 'not_attended') {
+                $query->where('is_attended', false);
+            }
+        }
+
+        if ($request->filled('source') && $request->input('source') !== 'all') {
+            if ($request->input('source') === '_none_') {
+                $query->where(function ($sub) {
+                    $sub->whereNull('guest_source')->orWhere('guest_source', '');
+                });
+            } else {
+                $query->where('guest_source', $request->input('source'));
+            }
+        }
+
         $sort = $request->input('sort', 'name');
         $direction = $request->input('direction', 'asc') === 'desc' ? 'desc' : 'asc';
         if (in_array($sort, ['name', 'group_name', 'session_name', 'max_pax', 'is_physical_invitation', 'created_at'])) {

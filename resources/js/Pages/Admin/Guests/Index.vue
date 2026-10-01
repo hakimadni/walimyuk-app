@@ -44,6 +44,9 @@ const filterSent = ref(props.filters?.sent || 'all')
 const filterPhysical = ref(props.filters?.physical || 'all')
 const filterGroup = ref(props.filters?.group || 'all')
 const filterSession = ref(props.filters?.session || 'all')
+const filterVip = ref(props.filters?.vip || 'all')
+const filterAttended = ref(props.filters?.attended || 'all')
+const filterSource = ref(props.filters?.source || 'all')
 
 const copiedId = ref(null)
 const isImportModalOpen = ref(false)
@@ -151,12 +154,33 @@ const filteredGuests = computed(() => {
       if (filterPhysical.value === 'digital' && g.is_physical_invitation) return false
     }
 
+    // Filter VIP
+    if (filterVip.value !== 'all') {
+      if (filterVip.value === 'vip' && !g.is_vip) return false
+      if (filterVip.value === 'regular' && g.is_vip) return false
+    }
+
+    // Filter Attended
+    if (filterAttended.value !== 'all') {
+      if (filterAttended.value === 'attended' && !g.is_attended) return false
+      if (filterAttended.value === 'not_attended' && g.is_attended) return false
+    }
+
+    // Filter Source
+    if (filterSource.value !== 'all') {
+      if (filterSource.value === '_none_') {
+        if (g.guest_source && g.guest_source.trim() !== '') return false
+      } else if (g.guest_source !== filterSource.value) {
+        return false
+      }
+    }
+
     return true
   })
 })
 
 const hasActiveFilters = computed(() => {
-  return searchQuery.value.trim() !== '' || filterStatus.value !== 'all' || filterSent.value !== 'all' || filterPhysical.value !== 'all' || filterGroup.value !== 'all' || filterSession.value !== 'all'
+  return searchQuery.value.trim() !== '' || filterStatus.value !== 'all' || filterSent.value !== 'all' || filterPhysical.value !== 'all' || filterGroup.value !== 'all' || filterSession.value !== 'all' || filterVip.value !== 'all' || filterAttended.value !== 'all' || filterSource.value !== 'all'
 })
 
 function clearFilters() {
@@ -166,6 +190,9 @@ function clearFilters() {
   filterPhysical.value = 'all'
   filterGroup.value = 'all'
   filterSession.value = 'all'
+  filterVip.value = 'all'
+  filterAttended.value = 'all'
+  filterSource.value = 'all'
 }
 
 const togglingPhysicalId = ref(null)
@@ -304,7 +331,7 @@ watch(totalPages, (newTotal) => {
 
 // Reset to page 1 whenever filters change
 watch(
-  [searchQuery, filterStatus, filterSent, filterPhysical, filterGroup, filterSession],
+  [searchQuery, filterStatus, filterSent, filterPhysical, filterGroup, filterSession, filterVip, filterAttended, filterSource],
   () => {
     currentPage.value = 1
   }
@@ -864,6 +891,38 @@ const totalPax = computed(() => props.stats?.total_pax ?? guestList.value.reduce
                 <option value="all">Semua Tipe Undangan</option>
                 <option value="physical">💌 Undangan Fisik</option>
                 <option value="digital">🌐 Digital Saja</option>
+              </select>
+
+              <!-- VIP Filter -->
+              <select
+                v-model="filterVip"
+                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">Semua Prioritas</option>
+                <option value="vip">🌟 Tamu VIP</option>
+                <option value="regular">Reguler</option>
+              </select>
+
+              <!-- Attended Filter -->
+              <select
+                v-model="filterAttended"
+                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">Semua Status Check-in</option>
+                <option value="attended">✅ Sudah Check-in</option>
+                <option value="not_attended">Menunggu Kedatangan</option>
+              </select>
+
+              <!-- Source Filter -->
+              <select
+                v-model="filterSource"
+                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">Semua Sumber Tamu</option>
+                <option v-for="source in sourceOptions" :key="source" :value="source">
+                  {{ source }}
+                </option>
+                <option value="_none_">Tanpa Sumber</option>
               </select>
 
               <!-- Reset filter button -->
