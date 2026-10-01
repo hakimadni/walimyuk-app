@@ -76,6 +76,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', \App\Http\Controllers\Dashboard\UserController::class)
         ->names('dashboard.users');
 
+    // ─── Music Library CRUD (Admin Only) ───
+    Route::resource('background-music', \App\Http\Controllers\Dashboard\BackgroundMusicController::class)
+        ->only(['index', 'store', 'destroy'])
+        ->names('dashboard.background-music');
+    Route::get('api/background-music', [\App\Http\Controllers\Dashboard\BackgroundMusicController::class, 'apiIndex'])
+        ->name('api.background-music.index');
+
     // ─── Message Templates ───
     Route::apiResource('message-templates', \App\Http\Controllers\Dashboard\MessageTemplateController::class)->only(['index', 'store', 'destroy']);
 
@@ -213,6 +220,18 @@ Route::prefix('w/{wedding:slug}')
         Route::post('/wish', [PublicInvitationController::class, 'storeWish'])
             ->middleware('validate.guest_token')
             ->name('public.wish');
+    });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RECEPTIONIST SCANNER ROUTES (Protected by Auth)
+// ═══════════════════════════════════════════════════════════════════════════════
+Route::prefix('w/{wedding:slug}')
+    ->middleware(['web', 'auth'])
+    ->group(function () {
+        Route::get('/scanner', [\App\Http\Controllers\ScannerController::class, 'index'])
+            ->name('scanner.index');
+        Route::post('/scanner/check-in', [\App\Http\Controllers\ScannerController::class, 'checkIn'])
+            ->name('scanner.checkin');
     });
 
 // ═══════════════════════════════════════════════════════════════════════════════

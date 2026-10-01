@@ -178,10 +178,28 @@ class WeddingController extends Controller
         $wedding->load(['events', 'coupleProfiles', 'weddingVerses', 'giftBankAccounts', 'giftAddresses']);
         $wedding->loadCount(['guests', 'rsvps', 'wishes']);
 
+        // Analytics Data
+        $totalInvitedGuests = $wedding->guests()->sum('max_pax');
+        $totalRsvpConfirmed = $wedding->rsvps()->where('is_attending', true)->sum('pax_count');
+        $totalRsvpDeclined = $wedding->rsvps()->where('is_attending', false)->count();
+        $totalPendingRsvp = $wedding->guests()->doesntHave('rsvp')->count();
+        $totalAttended = $wedding->guests()->where('is_attended', true)->count();
+        $totalAttendedPax = $wedding->guests()->where('is_attended', true)
+            ->join('rsvps', 'guests.id', '=', 'rsvps.guest_id')
+            ->sum('rsvps.pax_count');
+
         return Inertia::render('Admin/Weddings/Show', [
             'wedding' => $wedding,
             'builderConfig' => $this->resolveBuilderConfig($wedding),
             'previewUrl' => $this->previewUrl($wedding),
+            'analytics' => [
+                'total_invited_pax' => (int) $totalInvitedGuests,
+                'total_rsvp_confirmed_pax' => (int) $totalRsvpConfirmed,
+                'total_rsvp_declined' => $totalRsvpDeclined,
+                'total_pending_rsvp' => $totalPendingRsvp,
+                'total_attended_guests' => $totalAttended,
+                'total_attended_pax' => (int) $totalAttendedPax,
+            ]
         ]);
     }
 

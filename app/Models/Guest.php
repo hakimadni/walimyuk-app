@@ -26,6 +26,9 @@ class Guest extends Model
         'short_code',
         'slug',
         'is_invitation_sent',
+        'is_attended',
+        'attended_at',
+        'qr_code_hash',
         'is_physical_invitation',
         'is_vip',
         'sent_at',
@@ -37,6 +40,9 @@ class Guest extends Model
         static::creating(function (Guest $guest) {
             if (empty($guest->token)) {
                 $guest->token = Str::random(64);
+            }
+            if (empty($guest->qr_code_hash)) {
+                $guest->qr_code_hash = Str::random(32);
             }
             if (empty($guest->short_code)) {
                 $guest->short_code = static::generateUniqueShortCode();
@@ -56,6 +62,8 @@ class Guest extends Model
     protected $casts = [
         'max_pax' => 'integer',
         'is_invitation_sent' => 'boolean',
+        'is_attended' => 'boolean',
+        'attended_at' => 'datetime',
         'is_physical_invitation' => 'boolean',
         'is_vip' => 'boolean',
         'sent_at' => 'datetime',

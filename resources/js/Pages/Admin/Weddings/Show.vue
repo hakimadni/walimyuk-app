@@ -7,17 +7,36 @@ import { computed, onMounted } from 'vue'
 import { formatDate } from '@/lib/date'
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import { Doughnut } from 'vue-chartjs'
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const props = defineProps({
   wedding: { type: Object, required: true },
   builderConfig: { type: Object, required: true },
   previewUrl: { type: String, default: null },
+  analytics: { type: Object, default: () => ({}) },
 })
 
 const profiles = computed(() => props.wedding.couple_profiles || props.wedding.coupleProfiles || [])
 const groom = computed(() => profiles.value.find((p) => p.role === 'groom') || profiles.value[0] || null)
 const bride = computed(() => profiles.value.find((p) => p.role === 'bride') || profiles.value[1] || null)
 const enabledBlocks = computed(() => (props.builderConfig.content?.blocks || []).filter((block) => block.enabled))
+
+const rsvpChartData = computed(() => ({
+  labels: ['Hadir (Pax)', 'Batal', 'Belum RSVP'],
+  datasets: [
+    {
+      backgroundColor: ['#10b981', '#f43f5e', '#cbd5e1'],
+      data: [
+        props.analytics.total_rsvp_confirmed_pax || 0,
+        props.analytics.total_rsvp_declined || 0,
+        props.analytics.total_pending_rsvp || 0,
+      ]
+    }
+  ]
+}))
 
 const startTour = () => {
   const driverObj = driver({
@@ -357,6 +376,27 @@ onMounted(() => {
 
           <!-- Right: Builder & Flow Summary -->
           <div class="space-y-6">
+            <!-- Analytics Chart -->
+            <Card class="border-slate-200">
+              <CardHeader>
+                <CardTitle class="font-serif text-base font-bold text-emerald-950">Statistik RSVP & Kehadiran</CardTitle>
+                <CardDescription>
+                  Dari total undangan ({{ analytics.total_invited_pax }} pax)
+                </CardDescription>
+              </CardHeader>
+              <CardContent class="space-y-4">
+                <div class="h-48 w-full flex justify-center">
+                  <Doughnut :data="rsvpChartData" :options="{ maintainAspectRatio: false }" />
+                </div>
+                <div class="pt-3 border-t border-slate-100 text-sm">
+                  <div class="flex justify-between py-1">
+                    <span class="text-slate-500">Tamu Hadir (Check-in)</span>
+                    <span class="font-semibold text-emerald-700">{{ analytics.total_attended_guests }} Tamu ({{ analytics.total_attended_pax }} Pax)</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card class="border-slate-200">
               <CardHeader>
                 <CardTitle class="font-serif text-base font-bold text-emerald-950">Status Susunan Seksi</CardTitle>

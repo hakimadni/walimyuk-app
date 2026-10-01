@@ -29,10 +29,14 @@ const previewIframe = ref(null)
 const previewWrapper = ref(null)
 const previewContainer = ref(null)
 const previewScale = ref(0.8)
+import axios from 'axios'
+
 const displayWidth = ref(314)
 const displayHeight = ref(681)
 const musicFileName = ref('')
 const musicFileError = ref('')
+const musicLibrary = ref([])
+const activeMusicTab = ref('upload') // 'upload' or 'library'
 
 let resizeObserver = null
 
@@ -66,6 +70,10 @@ onMounted(() => {
     })
     resizeObserver.observe(previewWrapper.value)
   }
+
+  axios.get('/api/background-music').then(res => {
+    musicLibrary.value = res.data
+  }).catch(err => console.error('Failed to load music library', err))
 })
 
 onUnmounted(() => {
@@ -392,28 +400,63 @@ function lockDisabled(permissionKey) {
               <!-- Music Section -->
               <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                 <h3 class="font-serif text-lg font-bold text-emerald-950">Musik Latar Undangan</h3>
-                <div class="space-y-1.5">
-                  <Label>URL Musik (Streaming / Direct MP3)</Label>
-                  <Input v-model="form.builder.content.music_url" :disabled="lockDisabled('music')" placeholder="https://domain.com/music.mp3" />
-                  <p v-if="form.errors['builder.content.music_url']" class="text-xs text-red-600">{{ form.errors['builder.content.music_url'] }}</p>
+                
+                <div class="flex space-x-2 border-b border-slate-200 pb-2">
+                  <button type="button" @click="activeMusicTab = 'upload'" :class="activeMusicTab === 'upload' ? 'text-emerald-700 font-bold border-b-2 border-emerald-700' : 'text-slate-500 font-medium'" class="px-3 py-1 text-sm transition-colors">Upload Sendiri</button>
+                  <button type="button" @click="activeMusicTab = 'library'" :class="activeMusicTab === 'library' ? 'text-emerald-700 font-bold border-b-2 border-emerald-700' : 'text-slate-500 font-medium'" class="px-3 py-1 text-sm transition-colors flex items-center gap-1">
+                    Pilih dari Library
+                    <span v-if="!isPremium" class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold uppercase">Pro</span>
+                  </button>
                 </div>
-                <div class="space-y-1.5">
-                  <Label>Upload File Musik (opsional, maks. 20MB)</Label>
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    :disabled="lockDisabled('music')"
-                    @change="onMusicFileChange($event)"
-                    class="block w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs disabled:bg-slate-100"
-                  />
-                  <p v-if="musicFileError" class="text-xs text-red-600">{{ musicFileError }}</p>
-                  <p v-else-if="musicFileName" class="text-xs text-slate-500">📎 Dipilih: {{ musicFileName }}</p>
-                  <p v-if="form.errors['builder.content.music_file']" class="text-xs text-red-600">{{ form.errors['builder.content.music_file'] }}</p>
+
+                <div v-if="activeMusicTab === 'upload'" class="space-y-4">
+                  <div class="space-y-1.5">
+                    <Label>URL Musik (Streaming / Direct MP3)</Label>
+                    <Input v-model="form.builder.content.music_url" :disabled="lockDisabled('music')" placeholder="https://domain.com/music.mp3" />
+                    <p v-if="form.errors['builder.content.music_url']" class="text-xs text-red-600">{{ form.errors['builder.content.music_url'] }}</p>
+                  </div>
+                  <div class="space-y-1.5">
+                    <Label>Upload File Musik (opsional, maks. 20MB)</Label>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      :disabled="lockDisabled('music')"
+                      @change="onMusicFileChange($event)"
+                      class="block w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs disabled:bg-slate-100"
+                    />
+                    <p v-if="musicFileError" class="text-xs text-red-600">{{ musicFileError }}</p>
+                    <p v-else-if="musicFileName" class="text-xs text-slate-500">📎 Dipilih: {{ musicFileName }}</p>
+                    <p v-if="form.errors['builder.content.music_file']" class="text-xs text-red-600">{{ form.errors['builder.content.music_file'] }}</p>
+                  </div>
+                  <p v-if="form.builder.content.music_uploaded_url" class="text-xs text-emerald-700 truncate">
+                    ✓ File terupload: {{ form.builder.content.music_uploaded_url.split('/').pop() }}
+                  </p>
                 </div>
-                <p v-if="form.builder.content.music_uploaded_url" class="text-xs text-emerald-700 truncate">
-                  ✓ File terupload: {{ form.builder.content.music_uploaded_url.split('/').pop() }}
-                </p>
-                <label class="flex items-center gap-3 text-xs font-medium text-slate-700 cursor-pointer pt-1">
+
+                <div v-if="activeMusicTab === 'library'" class="space-y-4">
+                  <div v-if="!isPremium" class="p-4 bg-amber-50 rounded-xl border border-amber-200 text-center">
+                    <p class="text-sm font-semibold text-amber-800 mb-1">Khusus Pengguna Premium</p>
+                    <p class="text-xs text-amber-700 mb-3">Upgrade ke Pro untuk memilih dari koleksi musik premium kami yang bebas hak cipta dan berkualitas tinggi.</p>
+                  </div>
+                  <div v-else class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
+                    <div v-if="musicLibrary.length === 0" class="text-center text-xs text-slate-500 py-4">Belum ada musik di library</div>
+                    <div v-for="music in musicLibrary" :key="music.id" 
+                         @click="!lockDisabled('music') && (form.builder.content.music_url = music.file_path)"
+                         class="p-3 border rounded-xl flex flex-col gap-2 cursor-pointer transition-colors"
+                         :class="form.builder.content.music_url === music.file_path ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-emerald-300'">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <p class="text-sm font-bold text-slate-800">{{ music.title }}</p>
+                          <p class="text-xs text-slate-500">{{ music.artist || 'Unknown Artist' }}</p>
+                        </div>
+                        <span v-if="form.builder.content.music_url === music.file_path" class="text-emerald-600 text-lg">✅</span>
+                      </div>
+                      <audio controls :src="music.file_path" class="h-8 w-full"></audio>
+                    </div>
+                  </div>
+                </div>
+
+                <label class="flex items-center gap-3 text-xs font-medium text-slate-700 cursor-pointer pt-1 mt-2 border-t border-slate-100 pt-3">
                   <input v-model="form.builder.content.music_autoplay" :disabled="lockDisabled('music')" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                   Putar musik otomatis saat tamu menekan "Buka Undangan"
                 </label>

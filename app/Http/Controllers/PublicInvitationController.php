@@ -44,6 +44,11 @@ class PublicInvitationController extends Controller
             ->limit(50)
             ->get();
 
+        $qrCodeSvg = null;
+        if ($guest && $guest->qr_code_hash && $existingRsvp && $existingRsvp->is_attending) {
+            $qrCodeSvg = (string) app('qrcode')->size(200)->generate($guest->qr_code_hash);
+        }
+
         return Inertia::render('Public/InvitationShell', [
             'wedding' => $wedding,
             'coupleProfiles' => $wedding->coupleProfiles,
@@ -53,6 +58,7 @@ class PublicInvitationController extends Controller
             'giftAddresses' => $wedding->giftAddresses,
             'guest' => $guest,
             'existingRsvp' => $existingRsvp,
+            'qrCodeSvg' => $qrCodeSvg,
             'approvedWishes' => $approvedWishes,
             'themeConfig' => $wedding->theme_config ?? [],
         ]);

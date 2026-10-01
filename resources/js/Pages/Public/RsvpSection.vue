@@ -70,6 +70,12 @@ function submit() {
         <p class="text-xs font-bold" :style="{ color: palette.primary }">{{ page.props.flash.success }}</p>
       </div>
 
+      <!-- QR Code -->
+      <div v-if="page.props.qrCodeSvg" class="mb-4 flex flex-col items-center justify-center p-4 rounded-xl border bg-white shadow-sm aos-item aos-zoom-in" :style="{ borderColor: `${palette.secondary}44` }">
+        <p class="text-xs font-bold mb-3" :style="{ color: palette.primary }">Tunjukkan QR Code ini kepada penerima tamu</p>
+        <div class="bg-white p-2 border rounded shadow-inner" v-html="page.props.qrCodeSvg"></div>
+      </div>
+
       <form @submit.prevent="submit" class="flex flex-col gap-3 text-center">
         <!-- Attendance toggle -->
         <div class="flex flex-col items-center gap-1.5 aos-item aos-fade-up aos-delay-150">
